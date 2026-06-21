@@ -49,7 +49,7 @@ Return a single valid JSON object (no markdown fences, no text outside the JSON)
       - "type": One of "html" | "field2d" | "wave" | "plot" | "3d"
       - "title": Short descriptive title
       - "description": Interactivity hint (e.g., "Drag the charges to see the field change")
-      - "html": (Required if type is "html") A complete, self-contained, responsive HTML5 string (with inline CSS in <style> and interactive Javascript in <script>) representing a premium interactive simulation. It should have controls, animations, beautiful styling, and explain the concept interactively. It can load common CDN scripts (like three.js, chart.js, tailwind, etc.) if needed.
+      - "html": (Required if type is "html") A complete, self-contained HTML5 string. To ensure it fits perfectly and is responsive, it MUST include <meta name="viewport" content="width=device-width, initial-scale=1.0"> in the <head>, use width: 100% (or responsive layouts) without hardcoded pixel widths, and handle canvas or layout resizing cleanly. It should contain inline CSS in <style> and interactive Javascript in <script> presenting a premium interactive simulation. It can load common CDN scripts (like three.js, chart.js, tailwind, etc.) if needed.
       - "config": Type-specific configuration (Only if type is field2d, wave, plot, or 3d):
 
        For "field2d" (2D electric/magnetic field visualization):
@@ -191,12 +191,12 @@ GUIDELINES:
    Format your HTML5 simulation inside a fenced code block with the language label "html-viz" at the end of your response.
 
    Inside the html-viz block:
-   - It MUST be a complete standalone HTML document starting with <!DOCTYPE html> and containing <html>, <head> (with <title> tag and any meta tags), and <body>.
+   - It MUST be a complete standalone HTML document starting with <!DOCTYPE html> and containing <html>, <head> (with <title> tag, a viewport meta tag: <meta name="viewport" content="width=device-width, initial-scale=1.0">, and any other meta tags), and <body>.
    - The <title> tag should be the name of the simulation (e.g. <title>RLC Circuit Simulator</title>).
    - Include a comment at the top of the file to provide an interactivity hint/description: <!-- description: Drag sliders and click components to interact with the simulation. -->
    - Style it beautifully and modernly with CSS inside a <style> tag. Use sleek gradients, tailored colors (like slate, indigo, HSL palettes), and clear layouts.
+   - All components, canvases, and layout wrappers MUST be fully responsive and fit viewport width (e.g. use width: 100% or w-full, never use hardcoded static width like 800px).
    - Add interactive controls (sliders, buttons, checkboxes) so the student can change parameters and see the animation update dynamically.
-   - Make it fully responsive (adapts to parent container width/height).
    - You may load CDNs (e.g., Chart.js, Tailwind CSS, Three.js) if needed.
 
    Example html-viz block format:

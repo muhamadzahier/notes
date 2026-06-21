@@ -89,8 +89,13 @@ async function init() {
   marked.setOptions({
     gfm: true, breaks: false,
     highlight: (code, lang) => {
-      if (lang && hljs.getLanguage(lang)) return hljs.highlight(code, { language: lang }).value;
-      return hljs.highlightAuto(code).value;
+      if (typeof hljs !== 'undefined') {
+        try {
+          if (lang && hljs.getLanguage(lang)) return hljs.highlight(code, { language: lang }).value;
+          return hljs.highlightAuto(code).value;
+        } catch (_) {}
+      }
+      return esc(code);
     }
   });
 
@@ -173,9 +178,12 @@ function bindEvents() {
     }
     // Close jargon tooltips on outside clicks
     if (!e.target.closest('.jargon-term')) {
+      let closed = false;
       document.querySelectorAll('.jargon-term.active').forEach(el => {
         el.classList.remove('active');
+        closed = true;
       });
+      if (closed) hideJargonTooltip();
     }
   });
 
@@ -189,7 +197,13 @@ function bindEvents() {
       document.querySelectorAll('.jargon-term.active').forEach(el => {
         if (el !== jargon) el.classList.remove('active');
       });
-      jargon.classList.toggle('active', !isActive);
+      const newState = !isActive;
+      jargon.classList.toggle('active', newState);
+      if (newState) {
+        showJargonTooltip(jargon);
+      } else {
+        hideJargonTooltip();
+      }
       return;
     }
 
@@ -229,6 +243,27 @@ function bindEvents() {
       }
     }
   });
+
+  // Handle jargon tooltip hover
+  dom.workspaceContent.addEventListener('mouseover', (e) => {
+    const jargon = e.target.closest('.jargon-term');
+    if (jargon) {
+      showJargonTooltip(jargon);
+    }
+  });
+
+  dom.workspaceContent.addEventListener('mouseout', (e) => {
+    const jargon = e.target.closest('.jargon-term');
+    if (jargon && !jargon.classList.contains('active')) {
+      hideJargonTooltip();
+    }
+  });
+
+  // Hide tooltips on scroll
+  window.addEventListener('scroll', () => {
+    hideJargonTooltip();
+    document.querySelectorAll('.jargon-term.active').forEach(el => el.classList.remove('active'));
+  }, { passive: true });
 
   // Bind dropdown option clicks
   bindReadingSettingsEvents();
@@ -664,19 +699,37 @@ function createSectionCard(section, idx) {
 
     if (section.visualization.type === 'html') {
       vizWrap.innerHTML = `
-        <div class="viz-head"><h3>${esc(vizTitle)}</h3></div>
+        <div class="viz-head" style="display: flex; justify-content: space-between; align-items: center;">
+          <h3>${esc(vizTitle)}</h3>
+          <button class="viz-fullscreen-btn" title="Fullscreen" style="background: none; border: none; cursor: pointer; color: #888; display: inline-flex; align-items: center; padding: 4px;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+          </button>
+        </div>
         <div class="viz-iframe-wrap">
           <iframe class="viz-iframe" sandbox="allow-scripts"></iframe>
+          <button class="viz-fullscreen-close" title="Exit Fullscreen">&times;</button>
         </div>
         ${vizDesc ? `<p class="viz-hint">Hint: ${esc(vizDesc)}</p>` : ''}`;
 
       card.appendChild(vizWrap);
 
+      const iframeWrap = vizWrap.querySelector('.viz-iframe-wrap');
+      const fullscreenBtn = vizWrap.querySelector('.viz-fullscreen-btn');
+      const fsCloseBtn = vizWrap.querySelector('.viz-fullscreen-close');
+
+      fullscreenBtn.addEventListener('click', () => {
+        iframeWrap.classList.add('fullscreen-viz');
+      });
+
+      fsCloseBtn.addEventListener('click', () => {
+        iframeWrap.classList.remove('fullscreen-viz');
+      });
+
       // Set srcdoc dynamically
       requestAnimationFrame(() => {
         const iframe = vizWrap.querySelector('.viz-iframe');
         if (iframe) {
-          iframe.srcdoc = section.visualization.html || '';
+          iframe.srcdoc = prepareIframeHtml(section.visualization.html || '');
         }
       });
     } else {
@@ -1021,7 +1074,11 @@ function renderMathMarkdown(text) {
   } catch (_) {}
 
   // Highlight code blocks
-  tmp.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+  if (typeof hljs !== 'undefined') {
+    try {
+      tmp.querySelectorAll('pre code').forEach(el => hljs.highlightElement(el));
+    } catch (_) {}
+  }
 
   return tmp.innerHTML;
 }
@@ -1276,27 +1333,71 @@ function renderMessage(role, text) {
     return ''; // Strip block from rendered message
   });
 
-  // Extract custom html-viz code blocks
-  processedText = processedText.replace(/```html-viz\s*([\s\S]*?)```/g, (match, htmlStr) => {
+  // Helper to register html config
+  const registerHtmlViz = (htmlCode) => {
     try {
-      const htmlCode = htmlStr.trim();
-      const titleMatch = htmlCode.match(/<title>([\s\S]*?)<\/title>/i);
+      const code = htmlCode.trim();
+      const titleMatch = code.match(/<title>([\s\S]*?)<\/title>/i);
       const title = titleMatch ? titleMatch[1].trim() : 'Interactive Simulation';
       
-      const descMatch = htmlCode.match(/<!--\s*description:\s*([\s\S]*?)\s*-->/i);
+      const descMatch = code.match(/<!--\s*description:\s*([\s\S]*?)\s*-->/i);
       const description = descMatch ? descMatch[1].trim() : '';
 
       vizConfigs.push({
         type: 'html',
         title,
         description,
-        html: htmlCode
+        html: code
       });
     } catch (e) {
-      console.warn('Failed to process html-viz block:', e);
+      console.warn('Failed to parse html-viz config:', e);
     }
+  };
+
+  // 1. Extract custom html-viz code blocks
+  processedText = processedText.replace(/```html-viz\s*([\s\S]*?)```/g, (match, htmlStr) => {
+    registerHtmlViz(htmlStr);
     return ''; // Strip block from rendered message
   });
+
+  // 2. Extract standard html code blocks if they look like standalone pages (containing doctype, html, or body)
+  processedText = processedText.replace(/```html\s*([\s\S]*?)```/g, (match, htmlStr) => {
+    const trimmed = htmlStr.trim();
+    if (trimmed.startsWith('<!DOCTYPE') || /<html/i.test(trimmed) || /<body/i.test(trimmed)) {
+      registerHtmlViz(trimmed);
+      return ''; // Strip block from rendered message
+    }
+    return match; // Leave alone if it's just code snippet
+  });
+
+  // 3. Extract raw un-fenced HTML documents (e.g. starting with <!DOCTYPE html> or <html> to the end of text or </html>)
+  const docTypeIdx = processedText.toLowerCase().indexOf('<!doctype html');
+  const htmlTagIdx = processedText.toLowerCase().indexOf('<html');
+  const startIdx = docTypeIdx !== -1 ? docTypeIdx : htmlTagIdx;
+  
+  if (startIdx !== -1) {
+    const rawHtmlContent = processedText.substring(startIdx);
+    // Find the end: either </html> or end of the string
+    let endIdx = rawHtmlContent.toLowerCase().lastIndexOf('</html>');
+    let htmlCodeToExtract = '';
+    
+    if (endIdx !== -1) {
+      endIdx += '</html>'.length;
+      htmlCodeToExtract = rawHtmlContent.substring(0, endIdx);
+      processedText = processedText.substring(0, startIdx) + rawHtmlContent.substring(endIdx);
+    } else {
+      // It might have cut off or is just raw to the end
+      htmlCodeToExtract = rawHtmlContent;
+      processedText = processedText.substring(0, startIdx);
+    }
+    
+    // Add close html tag if missing due to truncation
+    if (htmlCodeToExtract.toLowerCase().indexOf('<html') !== -1 && htmlCodeToExtract.toLowerCase().indexOf('</html>') === -1) {
+      htmlCodeToExtract += '\n</html>';
+    }
+    
+    registerHtmlViz(htmlCodeToExtract);
+  }
   
   const html = renderMathMarkdown(processedText.trim());
   
@@ -1349,13 +1450,19 @@ function toggleInlineVisualizer(bubble, btn, vizConfig) {
 
   if (vizConfig.type === 'html') {
     container.innerHTML = `
-      <div class="chat-viz-header">
+      <div class="chat-viz-header" style="display: flex; justify-content: space-between; align-items: center;">
         <h4>${esc(vizConfig.title || 'Simulation')}</h4>
-        <button class="chat-viz-close" title="Close">&times;</button>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="chat-viz-fullscreen" title="Fullscreen" style="background: none; border: none; cursor: pointer; color: #999; display: flex; align-items: center; padding: 2px;">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+          </button>
+          <button class="chat-viz-close" title="Close">&times;</button>
+        </div>
       </div>
-      <div class="chat-viz-body" style="padding: 0;">
+      <div class="chat-viz-body" style="padding: 0; position: relative;">
         <div class="chat-iframe-wrap">
           <iframe class="chat-viz-iframe" sandbox="allow-scripts"></iframe>
+          <button class="viz-fullscreen-close" title="Exit Fullscreen">&times;</button>
         </div>
       </div>`;
     
@@ -1363,9 +1470,20 @@ function toggleInlineVisualizer(bubble, btn, vizConfig) {
     
     const iframe = container.querySelector('.chat-viz-iframe');
     const closeBtn = container.querySelector('.chat-viz-close');
+    const iframeWrap = container.querySelector('.chat-iframe-wrap');
+    const fullscreenBtn = container.querySelector('.chat-viz-fullscreen');
+    const fsCloseBtn = container.querySelector('.viz-fullscreen-close');
+    
+    fullscreenBtn.addEventListener('click', () => {
+      iframeWrap.classList.add('fullscreen-viz');
+    });
+    
+    fsCloseBtn.addEventListener('click', () => {
+      iframeWrap.classList.remove('fullscreen-viz');
+    });
     
     try {
-      iframe.srcdoc = vizConfig.html || '';
+      iframe.srcdoc = prepareIframeHtml(vizConfig.html || '');
       activeChatVisualizer = {
         iframe,
         destroy: () => {}
@@ -1517,6 +1635,113 @@ function toast(message, type = 'info') {
    ══════════════════════════════════════════════ */
 function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 function svgStar() { return `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;vertical-align:-1px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`; }
+
+function prepareIframeHtml(html) {
+  if (!html) return '';
+  let processed = html;
+  
+  // Ensure viewport meta tag exists
+  if (!/<meta[^>]*viewport/i.test(processed)) {
+    if (/<head>/i.test(processed)) {
+      processed = processed.replace(/<head>/i, '<head><meta name="viewport" content="width=device-width, initial-scale=1.0">');
+    } else {
+      processed = '<meta name="viewport" content="width=device-width, initial-scale=1.0">' + processed;
+    }
+  }
+  
+  // Inject CSS helper to guarantee responsiveness and clean style reset
+  const styleInject = `
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow-x: hidden;
+        box-sizing: border-box;
+      }
+      *, *:before, *:after {
+        box-sizing: inherit;
+      }
+      /* Prevent canvases/videos/images/tables from overflowing */
+      canvas, img, svg, video, table {
+        max-width: 100% !important;
+      }
+      .canvas-container {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+    </style>
+  `;
+  if (/<\/head>/i.test(processed)) {
+    processed = processed.replace(/<\/head>/i, `${styleInject}</head>`);
+  } else {
+    processed = styleInject + processed;
+  }
+  
+  return processed;
+}
+
+function showJargonTooltip(term) {
+  let tooltip = document.getElementById('jargon-tooltip');
+  if (!tooltip) {
+    tooltip = document.createElement('div');
+    tooltip.id = 'jargon-tooltip';
+    tooltip.className = 'jargon-tooltip hidden';
+    document.body.appendChild(tooltip);
+  }
+  
+  const text = term.getAttribute('data-tooltip');
+  if (!text) return;
+  
+  tooltip.textContent = text;
+  tooltip.classList.remove('hidden');
+  
+  const termRect = term.getBoundingClientRect();
+  const tooltipWidth = 240; // width from CSS
+  
+  // Center horizontally relative to the term
+  let left = termRect.left + (termRect.width - tooltipWidth) / 2;
+  
+  // Boundary constraints
+  const margin = 12;
+  const screenWidth = window.innerWidth;
+  
+  if (left < margin) {
+    left = margin;
+  } else if (left + tooltipWidth > screenWidth - margin) {
+    left = screenWidth - tooltipWidth - margin;
+  }
+  
+  // Determine top position (above term)
+  const tooltipHeight = tooltip.offsetHeight;
+  let top = termRect.top - tooltipHeight - 8;
+  
+  // If it overflows the top edge, show it below the term instead
+  if (top < margin) {
+    top = termRect.bottom + 8;
+  }
+  
+  tooltip.style.left = `${left}px`;
+  tooltip.style.top = `${top}px`;
+  
+  // Trigger animations
+  requestAnimationFrame(() => {
+    tooltip.classList.add('visible');
+  });
+}
+
+function hideJargonTooltip() {
+  const tooltip = document.getElementById('jargon-tooltip');
+  if (!tooltip) return;
+  
+  tooltip.classList.remove('visible');
+  setTimeout(() => {
+    if (!tooltip.classList.contains('visible')) {
+      tooltip.classList.add('hidden');
+    }
+  }, 150);
+}
 
 /* ══════════════════════════════════════════════
    Boot

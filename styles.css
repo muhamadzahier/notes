@@ -977,3 +977,74 @@ a:hover { text-decoration: underline; }
   height: 100%;
   border: none;
 }
+
+
+/* Fullscreen Simulation Mode */
+.viz-iframe-wrap.fullscreen-viz, .chat-iframe-wrap.fullscreen-viz {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  border-radius: 0;
+  border: none;
+  background: #fff;
+}
+.viz-fullscreen-close {
+  display: none;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  border: none;
+  font-size: 24px;
+  line-height: 36px;
+  text-align: center;
+  cursor: pointer;
+  z-index: 10000;
+  transition: background 0.15s;
+}
+.viz-fullscreen-close:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+.fullscreen-viz .viz-fullscreen-close {
+  display: block;
+}
+
+
+/* Jargon Tooltip Custom Styles */
+.jargon-term::before, .jargon-term::after {
+  display: none !important;
+}
+.jargon-tooltip {
+  position: fixed;
+  background: #1e293b;
+  color: #ffffff;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 400;
+  width: 240px;
+  text-align: center;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  white-space: normal;
+  line-height: 1.4;
+  border: 1px solid #334155;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s, transform 0.15s;
+  transform: scale(0.95);
+}
+.jargon-tooltip.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+.jargon-tooltip.hidden {
+  display: none;
+}
