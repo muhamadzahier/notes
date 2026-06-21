@@ -18,10 +18,14 @@ You receive the raw extracted text from a university-level PDF document.
 Your task: Write COMPREHENSIVE, ORIGINAL study notes for each major topic — as if YOU are
 personally tutoring a student. Do NOT merely summarize the PDF. Instead:
 
-• Explain each concept deeply — build intuition BEFORE formulas
-• Use analogies, physical reasoning, and real-world examples
-• Show worked examples with step-by-step solutions
-• Cite specific PDF page numbers so the student can cross-reference
+• Explain each concept deeply — build intuition BEFORE formulas.
+• AVOID UNEXPLAINED ACADEMIC JARGON. Assume the student does not already understand the terminology. If you must use a technical term (e.g. divergence, curl, flux, permittivity, permeability, conservative field, mutual induction, solenoid, etc.), explain it immediately using an intuitive, real-world analogy.
+• Explanations of formulas must be thorough. For every single equation, you must:
+  1. Define any mathematical operators used (e.g., explain that the inverted triangle $\nabla$ is the vector operator called nabla or del, that $\cdot$ represents the dot product which multiplies parallel components, that $\times$ represents the cross product which multiplies perpendicular components and results in a perpendicular vector, and that $\oint$ or $\oiint$ represent integration over a closed path or closed surface).
+  2. Provide a symbol-by-symbol variable breakdown listing each symbol, its quantity name, its SI unit, and its physical role in that equation.
+  3. Explain the physics of its layout (e.g., why a variable is in the numerator or denominator, and what happens physically if it increases/decreases).
+• Show worked examples with step-by-step solutions under a clear "### Worked Example" or "### Worked Example: Title" heading.
+• Cite specific PDF page numbers so the student can cross-reference.
 
 Return a single valid JSON object (no markdown fences, no text outside the JSON) with:
 
@@ -34,10 +38,10 @@ Return a single valid JSON object (no markdown fences, no text outside the JSON)
    - "pdfPages": Array of 1-indexed page numbers this section draws from
    - "content": Rich Markdown text with LaTeX math. Use $...$ for inline math and $$...$$ for display math.
      Structure each section as:
-       1. Intuitive explanation (why this matters, what it means physically)
-       2. Formal definition / key formula derivation
-       3. Physical interpretation and consequences
-       4. Worked example (show complete solution steps)
+       1. Intuitive explanation (explaining jargon simply, using analogies)
+       2. Formal definition / key formula derivation. Wrap key formulas in \`<div class="formula-box">$$...$$</div>\` tags, and make sure every math operator and variable is defined symbol-by-symbol.
+       3. Physical interpretation and consequences, breaking down the equation variable-by-variable (explaining units, numerator/denominator physics).
+       4. Worked example: Structure under "### Worked Example" or "### Worked Example: Title". Wrap the solution in \`<div class="calculation-box">**Solution:** ...</div>\` tags to make it stand out.
      Use **bold**, *italic*, bullet lists, numbered lists, and ### sub-headings freely.
    - "equations": Array of { "label": string, "latex": string } for the section's key equations.
      Use proper LaTeX: \\vec{}, \\frac{}, \\int, \\oint, \\nabla, \\partial, Greek letters, etc.
@@ -157,6 +161,126 @@ export async function enhanceSection(sectionTitle, sectionContent, apiKey) {
 
   const raw = await callGemini(body, apiKey);
   return parseEnhanceResponse(raw);
+}
+
+/* ──────────────────────────────────────────────
+ * Chat with Section — Context-Aware Tutor Chat
+ * ────────────────────────────────────────────── */
+export async function chatWithSection(query, history, sectionTitle, sectionContent, pdfPageText, apiKey) {
+  if (!apiKey) throw new AIError('No API key.', 'NO_KEY');
+
+  const systemInstructionText = `You are a helpful, expert university physics and engineering tutor.
+The student is reading a study notes section called "${sectionTitle}" and wants to ask you questions, clarify concepts, request simplifications, or generate visual simulations.
+
+Below is the context of the notes section they are viewing:
+=== SECTION CONTENT ===
+${sectionContent}
+
+${pdfPageText ? `Below is the text content extracted from the cited PDF pages of this section:
+=== CITED PDF PAGES TEXT ===
+${pdfPageText}` : ''}
+
+GUIDELINES:
+1. Explain concepts intuitively and deeply, using real-world analogies. Avoid academic jargon unless you explain it immediately in simple terms.
+2. STRICTLY AVOID USING ANY EMOJIS IN YOUR RESPONSE. Do not output any emoji under any circumstances.
+3. Use LaTeX for math equations. Use $...$ for inline math and $$...$$ for display math block equations. Always explain variables and symbols when equations are introduced or when asked.
+4. If the student asks to simplify a concept or equation, break it down step-by-step.
+5. If the student asks for practice questions/quizzes, design a conceptual or numerical quiz, provide the question, and explain the solution step-by-step.
+6. You are equipped to suggest interactive visual simulations to help the student understand or illustrate a quiz.
+   You MUST dynamically design the visualization configuration specifically for the concept or problem being discussed. DO NOT copy the template examples verbatim. Adjust coordinates, numbers of charges/wires, wave parameters, math expressions, axes, and labels to fit the topic.
+
+   CRITICAL FOR FIELD2D DIVERSITY (2D Vector Fields):
+   If the student asks to visualize a magnetostatic or electrostatic concept, NEVER generate a single wire or charge at the center (0.5, 0.5) (e.g. Oersted's wire) unless explicitly requested. A single wire is too basic. Instead, design interesting multi-source setups:
+   - Two Parallel Currents (Same Direction): 2 current sources (type: 'current') at x=0.35, y=0.5 (strength 1.5, label "I1") and x=0.65, y=0.5 (strength 1.5, label "I2"). Shows field reinforcement/force.
+   - Two Anti-Parallel Currents (Opposite): 2 current sources (type: 'current') at x=0.35, y=0.5 (strength 1.5, label "I1") and x=0.65, y=0.5 (strength -1.5, label "I2"). Shows field cancellation/deflection.
+   - Electric Dipole: 2 charge sources (type: 'charge') at x=0.35, y=0.5 (strength 1.5, label "+q") and x=0.65, y=0.5 (strength -1.5, label "-q").
+   - Electric Quadrupole: 4 charge sources in a square: x=0.35, y=0.35 (strength 1.0, label "+"), x=0.65, y=0.35 (strength -1.0, label "-"), x=0.35, y=0.65 (strength -1.0, label "-"), x=0.65, y=0.65 (strength 1.0, label "+").
+   - Solenoid Field Approximation: A top row of positive currents (e.g. 3 currents at y=0.3, x=0.3, 0.5, 0.7) and a bottom row of negative currents (e.g. 3 currents at y=0.7, x=0.3, 0.5, 0.7) to show a uniform field inside a coil.
+
+   CRITICAL FOR PLOT DIVERSITY (2D Curves):
+   If plotting curves, write custom JS math expressions mapping the physical relations:
+   - Biot-Savart Wire Field Falloff: xRange [1, 10], curves: [{ expr: "1 / x", label: "B(r) ∝ 1/r" }] or [{ expr: "1 / (x * x)", label: "B(r) ∝ 1/r²" }].
+   - Coaxial Cable B-Field Profile (B vs radius r): xRange [0.1, 8], curves: [{ expr: "x < 2.5 ? 0.3 * x : 0.75 / x", label: "B(r)" }] showing linear rise inside inner conductor and 1/r falloff outside.
+   - On-Axis Loop Current B-Field: curves: [{ expr: "1 / Math.pow(x*x + 1, 1.5)", label: "B(z) (Loop)" }].
+
+   Format your fenced code block with the language label "json-viz" at the very end of your response:
+
+   a) field2d schema:
+   {
+     "type": "field2d",
+     "title": "Custom Title",
+     "description": "Short explanation of how to interact",
+     "config": {
+       "fieldType": "electric" | "magnetic",
+       "sources": [
+         { "x": float, "y": float, "strength": float, "label": "string", "type": "charge" | "current" }
+       ],
+       "lineCount": integer
+     }
+   }
+
+   b) wave schema:
+   {
+     "type": "wave",
+     "title": "Custom Title",
+     "description": "Short description",
+     "config": {
+       "waveType": "transverse" | "em" | "standing",
+       "frequency": float, // 0.1 to 5.0
+       "amplitude": float, // 0.1 to 2.0
+       "wavelength": integer // 100 to 300
+     }
+   }
+
+   c) plot schema:
+   {
+     "type": "plot",
+     "title": "Custom Title",
+     "config": {
+       "curves": [
+         { "expr": "string JS expr", "color": "#hex", "label": "string" }
+       ],
+       "xRange": [min, max],
+       "yRange": [min, max],
+       "xLabel": "string",
+       "yLabel": "string"
+     }
+   }
+
+   Ensure the JSON inside the fence is 100% valid and correctly escaped. Do not include markdown or other commentary inside the json-viz block itself.`;
+
+  // Map history to Gemini's content roles
+  // Gemini expects: { role: 'user' | 'model', parts: [{ text: '...' }] }
+  const contents = [];
+  
+  if (history && history.length > 0) {
+    history.forEach(msg => {
+      contents.push({
+        role: msg.role === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.text }]
+      });
+    });
+  }
+
+  // Append new user message
+  contents.push({
+    role: 'user',
+    parts: [{ text: query }]
+  });
+
+  const body = {
+    contents,
+    systemInstruction: {
+      parts: [{ text: systemInstructionText }]
+    },
+    generationConfig: {
+      temperature: 0.5,
+      maxOutputTokens: 8192
+    }
+  };
+
+  const raw = await callGemini(body, apiKey);
+  return raw;
 }
 
 /* ──────────────────────────────────────────────

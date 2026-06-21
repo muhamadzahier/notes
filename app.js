@@ -5,7 +5,7 @@
  * interactive visualizations, insights panel.
  */
 
-import { generateInsights, enhanceSection, AIError } from './ai-handler.js';
+import { generateInsights, enhanceSection, chatWithSection, AIError } from './ai-handler.js';
 import { createVisualization } from './visualizer.js';
 
 /* ══════════════════════════════════════════════
@@ -23,6 +23,11 @@ let extractedText = '';
 let currentData = null;       // Current generated notes data
 let activeVisualizers = [];   // Track active viz instances for cleanup
 let mermaidCounter = 0;
+
+// Chatbot State
+let activeChatSectionIdx = null;
+let activeChatVisualizer = null; // Store active inline chat viz instance
+let cachedPdfPagesText = {};     // Cache extracted page texts: { docId_pageNum: "text" }
 
 /* ══════════════════════════════════════════════
    DOM
@@ -63,6 +68,16 @@ const dom = {
   // Lightbox
   lightbox: $('lightbox'),
   lightboxImg: $('lightbox-img'),
+  // Chatbot
+  chatPanel: $('chat-panel'),
+  chatBackdrop: $('chat-backdrop'),
+  chatSectionTitle: $('chat-section-title'),
+  chatMessages: $('chat-messages'),
+  chatTyping: $('chat-typing'),
+  chatInput: $('chat-input'),
+  sendChatBtn: $('send-chat-btn'),
+  clearChatBtn: $('clear-chat-btn'),
+  chatQuickPrompts: $('chat-quick-prompts'),
 };
 
 /* ══════════════════════════════════════════════
@@ -112,7 +127,30 @@ function bindEvents() {
   $('close-insights').addEventListener('click', closeInsights);
   dom.insightsBackdrop.addEventListener('click', closeInsights);
   dom.lightbox.addEventListener('click', () => dom.lightbox.classList.add('hidden'));
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') { toggleSettings(false); closeInsights(); dom.lightbox.classList.add('hidden'); toggleTextSettings(false); } });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') { toggleSettings(false); closeInsights(); closeChat(); dom.lightbox.classList.add('hidden'); toggleTextSettings(false); } });
+
+  // Chatbot Events
+  $('close-chat').addEventListener('click', closeChat);
+  dom.chatBackdrop.addEventListener('click', closeChat);
+  dom.clearChatBtn.addEventListener('click', clearChatHistory);
+  dom.sendChatBtn.addEventListener('click', () => submitChatMessage());
+  dom.chatInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      submitChatMessage();
+    }
+  });
+  dom.chatInput.addEventListener('input', () => {
+    dom.chatInput.style.height = 'auto';
+    dom.chatInput.style.height = Math.min(dom.chatInput.scrollHeight, 120) + 'px';
+  });
+  dom.chatQuickPrompts.addEventListener('click', e => {
+    const btn = e.target.closest('.quick-prompt-btn');
+    if (btn) {
+      const prompt = btn.dataset.prompt;
+      if (prompt) submitChatMessage(prompt);
+    }
+  });
 
   // Mobile menu TOC toggle
   dom.menuToggle.addEventListener('click', () => {
@@ -133,10 +171,28 @@ function bindEvents() {
     if (dom.sidebarNav.classList.contains('open') && !dom.sidebarNav.contains(e.target) && !dom.menuToggle.contains(e.target)) {
       dom.sidebarNav.classList.remove('open');
     }
+    // Close jargon tooltips on outside clicks
+    if (!e.target.closest('.jargon-term')) {
+      document.querySelectorAll('.jargon-term.active').forEach(el => {
+        el.classList.remove('active');
+      });
+    }
   });
 
-  // Intercept PDF page citation links
+  // Intercept workspace clicks (PDF citations + Jargon terms)
   dom.workspaceContent.addEventListener('click', async (e) => {
+    // Check if clicked a jargon term
+    const jargon = e.target.closest('.jargon-term');
+    if (jargon) {
+      e.stopPropagation();
+      const isActive = jargon.classList.contains('active');
+      document.querySelectorAll('.jargon-term.active').forEach(el => {
+        if (el !== jargon) el.classList.remove('active');
+      });
+      jargon.classList.toggle('active', !isActive);
+      return;
+    }
+
     const a = e.target.closest('a');
     if (!a) return;
     const href = a.getAttribute('href');
@@ -268,7 +324,7 @@ function toggleTextSettings(show) {
    Router
    ══════════════════════════════════════════════ */
 function showScreen(id) { dom.homescreen.classList.add('hidden'); dom.workspace.classList.add('hidden'); $(id).classList.remove('hidden'); }
-function goHome() { cleanupVisualizers(); currentCourse = null; currentDoc = null; currentPdfDoc = null; extractedText = ''; currentData = null; showScreen('homescreen'); }
+function goHome() { cleanupVisualizers(); closeChat(); currentCourse = null; currentDoc = null; currentPdfDoc = null; extractedText = ''; currentData = null; showScreen('homescreen'); }
 
 /* ══════════════════════════════════════════════
    Homescreen
@@ -529,6 +585,7 @@ function createSectionCard(section, idx) {
     <div class="section-head-actions">
       ${pageRef ? `<button class="pdf-toggle-btn" data-pages="${pages.join(',')}">View PDF (${pageRef})</button>` : ''}
       <button class="section-enhance-btn" data-idx="${idx}">Enhance Section</button>
+      <button class="section-chat-btn" data-idx="${idx}">Ask AI</button>
     </div>`;
   card.appendChild(head);
 
@@ -614,6 +671,10 @@ function createSectionCard(section, idx) {
   const enhBtn = head.querySelector('.section-enhance-btn');
   if (enhBtn) enhBtn.addEventListener('click', () => onEnhanceSection(idx));
 
+  // Bind chat
+  const chatBtn = head.querySelector('.section-chat-btn');
+  if (chatBtn) chatBtn.addEventListener('click', () => openChat(idx));
+
   return card;
 }
 
@@ -670,6 +731,210 @@ async function toggleSectionPdf(card, pages, btn) {
 /* ══════════════════════════════════════════════
    Math + Markdown Rendering
    ══════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════
+   Jargon Dictionary & Formatting Helpers
+   ══════════════════════════════════════════════ */
+const JARGON_MAP = {
+  'electrostatics': 'The study of electric charges at rest (static electricity).',
+  'magnetostatics': 'The study of magnetic fields produced by steady, unchanging currents.',
+  'conservative': 'A field where the total work done moving a charge in a closed loop is zero.',
+  'divergence': 'A measure of how much a field spreads out or flows away from a point (like a water source).',
+  'curl': 'A measure of how much a field rotates or swirls around a point (like a whirlpool).',
+  'divergence-free': 'A field whose divergence is zero everywhere, meaning field lines have no start or end point and must form closed loops.',
+  'curl-active': 'A field that rotates or swirls, indicating presence of vortices or local circulation sources.',
+  'magnetic flux density': 'A vector field representing the strength and direction of a magnetic field per unit area (Tesla).',
+  'permeability': 'A measure of how easily a material allows magnetic fields to pass through and establish themselves within it.',
+  'permittivity': 'A measure of how easily a material polarizes in response to an electric field, opposing the field.',
+  'electromotive force': 'The voltage induced by a changing magnetic field or battery, driving electrical current.',
+  'emf': 'Electromotive Force: the voltage induced by a changing magnetic field, driving current.',
+  'mutual induction': 'When a changing current in one coil induces a voltage in a nearby second coil.',
+  'self-inductance': 'The property of a coil to oppose changes in its own current, inducing a voltage in itself.',
+  'mutual inductance': 'The property where a changing current in one inductor induces a voltage in a neighboring inductor.',
+  'solenoid': 'A coil of wire wound into a tightly packed cylinder, creating a strong and uniform magnetic field inside when carrying current.',
+  'lossless': 'An ideal system with no energy wasted as heat, friction, or radiation.',
+  'coupling coefficient': 'A measure of how much magnetic flux is shared between two coils (ranges from 0 to 1).',
+  'magnetic vector potential': 'A vector field whose curl is the magnetic field, used to simplify electromagnetics math.',
+  'vector potential': 'A vector field whose curl equals the magnetic field, aligning with the current source directions.',
+  'stoke\'s theorem': 'A mathematical theorem relating a surface integral of curl to a line integral around its boundary curve.',
+  'stokes\' theorem': 'A mathematical theorem relating a surface integral of curl to a line integral around its boundary curve.',
+  'gauss\'s law': 'Relates the electric charge to the net electric flux leaving a closed surface.',
+  'monopoles': 'Isolated single magnetic poles (North or South alone) – they do not exist in nature.',
+  'magnetic monopoles': 'Hypothetical isolated North or South magnetic poles – all magnets in nature have both.',
+  'biot-savart\'s law': 'A mathematical formula that calculates the magnetic field generated by a steady electric current element.',
+  'biot-savart law': 'A mathematical formula that calculates the magnetic field generated by a steady electric current element.',
+  'ampere\'s circuital law': 'Relates the magnetic field around a closed loop to the electric current passing through that loop.',
+  'ampere\'s law': 'Relates the magnetic field around a closed loop to the electric current passing through that loop.',
+  'faraday\'s law': 'States that a time-varying magnetic field induces an electromotive force (EMF) in a closed loop.',
+  'lenz\'s law': 'States that the direction of an induced current always opposes the change in magnetic flux that created it.',
+  'displacement current': 'A quantity representing a time-varying electric field, which acts like a physical current to produce a magnetic field.',
+  'maxwell\'s equations': 'A set of four fundamental equations that describe how electric and magnetic fields are generated and behave.',
+  'maxwell\'s equation': 'One of the four fundamental equations describing electromagnetism.'
+};
+
+function applyJargonTooltips(rootNode) {
+  const sortedKeys = Object.keys(JARGON_MAP).sort((a, b) => b.length - a.length);
+  const escapedKeys = sortedKeys.map(k => k.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'));
+  const regex = new RegExp(`\\b(${escapedKeys.join('|')})\\b`, 'gi');
+
+  const walk = document.createTreeWalker(rootNode, NodeFilter.SHOW_TEXT, null, false);
+  let textNode;
+  const nodesToReplace = [];
+
+  while (textNode = walk.nextNode()) {
+    const parent = textNode.parentNode;
+    if (!parent) continue;
+    
+    // Skip if inside code, pre, tags we already processed, or headings of toggles
+    if (parent.tagName === 'CODE' || parent.tagName === 'PRE' || 
+        parent.closest('pre') || parent.closest('code') || 
+        parent.closest('.jargon-term') || parent.closest('.example-summary')) {
+      continue;
+    }
+    
+    // Ignore math placeholders
+    if (textNode.nodeValue.includes('⟦MATH')) {
+      continue;
+    }
+    
+    if (regex.test(textNode.nodeValue)) {
+      nodesToReplace.push(textNode);
+    }
+  }
+
+  nodesToReplace.forEach(node => {
+    const parent = node.parentNode;
+    if (!parent) return;
+    const text = node.nodeValue;
+    regex.lastIndex = 0;
+
+    const fragment = document.createDocumentFragment();
+    let lastIndex = 0;
+    let match;
+
+    while ((match = regex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        fragment.appendChild(document.createTextNode(text.substring(lastIndex, match.index)));
+      }
+
+      const term = match[0];
+      const normTerm = term.toLowerCase();
+      const matchedKey = sortedKeys.find(k => k.toLowerCase() === normTerm);
+      const definition = JARGON_MAP[matchedKey] || '';
+
+      const span = document.createElement('span');
+      span.className = 'jargon-term';
+      span.setAttribute('data-tooltip', definition);
+      span.textContent = term;
+      fragment.appendChild(span);
+
+      lastIndex = regex.lastIndex;
+    }
+
+    if (lastIndex < text.length) {
+      fragment.appendChild(document.createTextNode(text.substring(lastIndex)));
+    }
+
+    parent.replaceChild(fragment, node);
+  });
+}
+
+function wrapWorkedExamples(rootNode) {
+  const headers = Array.from(rootNode.querySelectorAll('h3, h4, h2'));
+  headers.forEach(header => {
+    const text = header.textContent.trim();
+    if (/example/i.test(text)) {
+      const parent = header.parentNode;
+      if (!parent) return;
+
+      const details = document.createElement('details');
+      details.className = 'example-toggle';
+      details.open = false; // Collapsed by default
+
+      const summary = document.createElement('summary');
+      summary.className = 'example-summary';
+      summary.innerHTML = `${text} <span class="toggle-hint">(Click to expand)</span>`;
+      details.appendChild(summary);
+
+      const contentWrap = document.createElement('div');
+      contentWrap.className = 'example-content';
+
+      let current = header.nextElementSibling;
+      const siblingsToMove = [];
+
+      while (current) {
+        const currentTagName = current.tagName.toLowerCase();
+        const headerTagName = header.tagName.toLowerCase();
+        if (/^h[1-6]$/.test(currentTagName) || current.classList.contains('example-toggle')) {
+          if (currentTagName <= headerTagName || current.classList.contains('example-toggle')) {
+            break;
+          }
+        }
+        siblingsToMove.push(current);
+        current = current.nextElementSibling;
+      }
+
+      siblingsToMove.forEach(sibling => {
+        contentWrap.appendChild(sibling);
+      });
+
+      details.appendChild(contentWrap);
+      parent.replaceChild(details, header);
+    }
+  });
+}
+
+function wrapSolutions(rootNode) {
+  rootNode.querySelectorAll('strong, em, p').forEach(el => {
+    const text = el.textContent.trim();
+    if (/^solution:?$/i.test(text)) {
+      let startNode = el;
+      if (el.tagName === 'STRONG' && el.parentNode && el.parentNode.tagName === 'P' && el.parentNode.children.length === 1) {
+        startNode = el.parentNode;
+      }
+
+      const parent = startNode.parentNode;
+      if (!parent) return;
+
+      const calcBox = document.createElement('div');
+      calcBox.className = 'calculation-box';
+
+      const calcTitle = document.createElement('div');
+      calcTitle.className = 'calculation-title';
+      calcTitle.textContent = 'Calculation Steps';
+      calcBox.appendChild(calcTitle);
+
+      let current = startNode.nextElementSibling;
+      const siblingsToMove = [];
+
+      while (current) {
+        if (/^h[1-6]$/.test(current.tagName.toLowerCase()) || 
+            current.classList.contains('example-toggle') || 
+            current.classList.contains('calculation-box')) {
+          break;
+        }
+        siblingsToMove.push(current);
+        current = current.nextElementSibling;
+      }
+
+      if (siblingsToMove.length === 0) return;
+
+      parent.insertBefore(calcBox, siblingsToMove[0]);
+
+      siblingsToMove.forEach(sibling => {
+        calcBox.appendChild(sibling);
+      });
+
+      calcBox.insertBefore(startNode, calcTitle);
+      startNode.style.fontWeight = 'bold';
+      startNode.style.marginBottom = '6px';
+      startNode.style.display = 'block';
+    }
+  });
+}
+
+/* ══════════════════════════════════════════════
+   Math + Markdown Rendering
+   ══════════════════════════════════════════════ */
 function renderMathMarkdown(text) {
   if (!text) return '';
 
@@ -693,9 +958,14 @@ function renderMathMarkdown(text) {
     html = html.replace(`⟦MATH${i}⟧`, block);
   });
 
-  // Create temp container for KaTeX
+  // Create temp container for DOM manipulation & KaTeX
   const tmp = document.createElement('div');
   tmp.innerHTML = html;
+
+  // Restructure DOM: Worked Examples, Solutions, and Jargon hovers
+  wrapWorkedExamples(tmp);
+  wrapSolutions(tmp);
+  applyJargonTooltips(tmp);
 
   try {
     renderMathInElement(tmp, {
@@ -785,6 +1055,7 @@ async function onEnhanceSection(idx) {
    ══════════════════════════════════════════════ */
 function resetUI() {
   cleanupVisualizers();
+  closeChat();
   hideAllSections();
   dom.skeletonLoader.classList.add('hidden');
   clearStatus();
@@ -799,6 +1070,7 @@ function hideAllSections() {
 function cleanupVisualizers() {
   activeVisualizers.forEach(v => { try { v.destroy(); } catch (_) {} });
   activeVisualizers = [];
+  cleanupChatVisualizer();
 }
 
 function setStatus(msg) { dom.loadingStatus.textContent = msg; dom.loadingStatus.classList.remove('hidden'); }
@@ -842,6 +1114,287 @@ function showKeyStatus(msg, type) {
   dom.keyStatus.textContent = msg;
   dom.keyStatus.className = `key-status ${type}`;
   dom.keyStatus.classList.remove('hidden');
+}
+
+/* ══════════════════════════════════════════════
+   Chatbot Controller
+   ══════════════════════════════════════════════ */
+async function openChat(sectionIdx) {
+  if (sectionIdx === null || !currentData?.sections?.[sectionIdx]) return;
+  activeChatSectionIdx = sectionIdx;
+  
+  // Close insights panel if open
+  closeInsights();
+  
+  // Clean up any existing chat visualizer
+  cleanupChatVisualizer();
+  
+  const section = currentData.sections[sectionIdx];
+  dom.chatSectionTitle.textContent = section.title;
+  
+  // Slide in panel and backdrop
+  dom.chatPanel.classList.add('open');
+  dom.chatBackdrop.classList.add('open');
+  
+  // Reset input value & height
+  dom.chatInput.value = '';
+  dom.chatInput.style.height = 'auto';
+  
+  // Show spinner while resolving/extracting PDF page text
+  dom.chatMessages.innerHTML = `
+    <div class="insights-loading">
+      <div class="spinner"></div>
+      <p>Extracting cited PDF page text...</p>
+    </div>`;
+  
+  try {
+    // Force text extraction/fetch of cited pages
+    const pdfPagesText = await getPdfPagesText(section.pdfPages || []);
+    
+    // Clear spinner
+    dom.chatMessages.innerHTML = '';
+    
+    // Load and render history
+    const history = getChatHistory(sectionIdx);
+    if (history.length === 0) {
+      appendWelcomeMessage(section.title);
+    } else {
+      history.forEach(msg => {
+        renderMessage(msg.role, msg.text);
+      });
+    }
+  } catch (e) {
+    dom.chatMessages.innerHTML = '';
+    renderMessage('ai', `Failed to load notes chat context: ${e.message}`);
+  }
+}
+
+function closeChat() {
+  dom.chatPanel.classList.remove('open');
+  dom.chatBackdrop.classList.remove('open');
+  cleanupChatVisualizer();
+  activeChatSectionIdx = null;
+}
+
+function cleanupChatVisualizer() {
+  if (activeChatVisualizer) {
+    try { activeChatVisualizer.destroy(); } catch (_) {}
+    activeChatVisualizer = null;
+  }
+}
+
+function getChatHistoryKey(sectionIdx) {
+  return `notes_chat_${currentDoc.id}_${sectionIdx}`;
+}
+
+function getChatHistory(sectionIdx) {
+  try {
+    return JSON.parse(localStorage.getItem(getChatHistoryKey(sectionIdx)) || '[]');
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveChatHistory(sectionIdx, history) {
+  try {
+    localStorage.setItem(getChatHistoryKey(sectionIdx), JSON.stringify(history));
+  } catch (e) {
+    console.warn('Storage full: could not save chat history.', e);
+  }
+}
+
+function clearChatHistory() {
+  if (activeChatSectionIdx === null) return;
+  localStorage.removeItem(getChatHistoryKey(activeChatSectionIdx));
+  cleanupChatVisualizer();
+  
+  dom.chatMessages.innerHTML = '';
+  const section = currentData.sections[activeChatSectionIdx];
+  appendWelcomeMessage(section.title);
+  toast('Chat history cleared.', 'info');
+}
+
+function appendWelcomeMessage(sectionTitle) {
+  const text = `Hello! I am your AI Tutor. Ask me any questions to clarify concepts, simplify equations, or explain details about **${sectionTitle}**.\n\nYou can also click the quick prompt buttons below to start.`;
+  renderMessage('ai', text);
+}
+
+function renderMessage(role, text) {
+  let processedText = text;
+  const vizConfigs = [];
+  
+  // Extract custom json-viz code blocks
+  processedText = processedText.replace(/```json-viz\s*([\s\S]*?)```/g, (match, jsonStr) => {
+    try {
+      const config = JSON.parse(jsonStr.trim());
+      vizConfigs.push(config);
+    } catch (e) {
+      console.warn('Failed to parse json-viz block:', e);
+    }
+    return ''; // Strip block from rendered message
+  });
+  
+  const html = renderMathMarkdown(processedText.trim());
+  
+  const msgRow = document.createElement('div');
+  msgRow.className = `chat-msg-row ${role}`;
+  
+  const bubble = document.createElement('div');
+  bubble.className = 'chat-bubble';
+  bubble.innerHTML = html;
+  msgRow.appendChild(bubble);
+  
+  // If visualizer is present in message, append a beautiful trigger button
+  vizConfigs.forEach(vizConfig => {
+    const btn = document.createElement('button');
+    btn.className = 'chat-viz-btn';
+    btn.innerHTML = `
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:4px;vertical-align:-1px"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Visualize: ${esc(vizConfig.title || 'Simulation')}
+    `;
+    btn.addEventListener('click', () => {
+      toggleInlineVisualizer(bubble, btn, vizConfig);
+    });
+    bubble.appendChild(btn);
+  });
+  
+  dom.chatMessages.appendChild(msgRow);
+  
+  // Auto-scroll log
+  dom.chatMessages.scrollTop = dom.chatMessages.scrollHeight;
+}
+
+function toggleInlineVisualizer(bubble, btn, vizConfig) {
+  const nextEl = btn.nextElementSibling;
+  const existing = (nextEl && nextEl.classList.contains('chat-viz-container')) ? nextEl : null;
+  if (existing) {
+    existing.remove();
+    if (activeChatVisualizer && activeChatVisualizer.canvas === existing.querySelector('canvas')) {
+      cleanupChatVisualizer();
+    }
+    return;
+  }
+  
+  cleanupChatVisualizer();
+  
+  const container = document.createElement('div');
+  container.className = 'chat-viz-container';
+  container.innerHTML = `
+    <div class="chat-viz-header">
+      <h4>${esc(vizConfig.title || 'Simulation')}</h4>
+      <button class="chat-viz-close" title="Close">&times;</button>
+    </div>
+    <div class="chat-viz-body">
+      <canvas class="chat-viz-canvas"></canvas>
+    </div>`;
+  
+  btn.after(container);
+  
+  const canvas = container.querySelector('.chat-viz-canvas');
+  const closeBtn = container.querySelector('.chat-viz-close');
+  const body = container.querySelector('.chat-viz-body');
+  
+  try {
+    const viz = createVisualization(canvas, vizConfig);
+    if (viz) {
+      activeChatVisualizer = viz;
+      viz.canvas = canvas; // Keep track of the active canvas
+      const controls = viz.getControls?.();
+      if (controls) body.appendChild(controls);
+    }
+  } catch (e) {
+    console.error('Failed to initialize chatbot visualizer:', e);
+    body.innerHTML = '<p style="font-size:0.7rem;color:#c44;padding:8px">Failed to load visualization.</p>';
+  }
+  
+  closeBtn.addEventListener('click', () => {
+    container.remove();
+    if (activeChatVisualizer === viz) {
+      cleanupChatVisualizer();
+    }
+  });
+  
+  // Scroll to reveal visualizer
+  requestAnimationFrame(() => {
+    dom.chatMessages.scrollTop = dom.chatMessages.scrollHeight;
+  });
+}
+
+async function getPdfPagesText(pageNumbers) {
+  if (!currentPdfDoc) return '';
+  const textPieces = [];
+  for (const pageNum of pageNumbers) {
+    if (pageNum < 1 || pageNum > currentPdfDoc.numPages) continue;
+    const cacheKey = `${currentDoc.id}_${pageNum}`;
+    if (cachedPdfPagesText[cacheKey]) {
+      textPieces.push(`--- PDF PAGE ${pageNum} ---\n${cachedPdfPagesText[cacheKey]}`);
+      continue;
+    }
+    try {
+      const page = await currentPdfDoc.getPage(pageNum);
+      const content = await page.getTextContent();
+      const pageText = content.items.map(item => item.str).join(' ');
+      cachedPdfPagesText[cacheKey] = pageText;
+      textPieces.push(`--- PDF PAGE ${pageNum} ---\n${pageText}`);
+    } catch (e) {
+      console.error(`Failed to extract text from page ${pageNum}:`, e);
+    }
+  }
+  return textPieces.join('\n\n');
+}
+
+async function submitChatMessage(textOverride) {
+  if (activeChatSectionIdx === null) return;
+  const apiKey = localStorage.getItem(STORAGE_KEY_API);
+  if (!apiKey) {
+    toast('Add your Gemini API key in Settings first.', 'error');
+    toggleSettings(true);
+    return;
+  }
+  
+  const query = textOverride || dom.chatInput.value.trim();
+  if (!query) return;
+  
+  // Clear input if not a button prompt
+  if (!textOverride) {
+    dom.chatInput.value = '';
+    dom.chatInput.style.height = 'auto';
+  }
+  
+  // Render user message bubble
+  renderMessage('user', query);
+  
+  // Add to history
+  const history = getChatHistory(activeChatSectionIdx);
+  history.push({ role: 'user', text: query });
+  saveChatHistory(activeChatSectionIdx, history);
+  
+  // Show typing loader
+  dom.chatTyping.classList.remove('hidden');
+  dom.chatMessages.scrollTop = dom.chatMessages.scrollHeight;
+  
+  try {
+    const section = currentData.sections[activeChatSectionIdx];
+    const pdfText = await getPdfPagesText(section.pdfPages || []);
+    
+    // Call Gemini API
+    const responseText = await chatWithSection(query, history.slice(0, -1), section.title, section.content, pdfText, apiKey);
+    
+    dom.chatTyping.classList.add('hidden');
+    
+    // Strict no-emojis rule enforcement
+    const sanitizedText = responseText.replace(/[\u{1F300}-\u{1F9FF}]|[\u{2700}-\u{27BF}]|[\u{1F600}-\u{1F64F}]/gu, '');
+    
+    // Render AI message bubble
+    renderMessage('ai', sanitizedText);
+    
+    // Add to history & save
+    history.push({ role: 'ai', text: sanitizedText });
+    saveChatHistory(activeChatSectionIdx, history);
+  } catch (err) {
+    dom.chatTyping.classList.add('hidden');
+    renderMessage('ai', `Sorry, I encountered an error: ${err.message || err}`);
+  }
 }
 
 /* ══════════════════════════════════════════════

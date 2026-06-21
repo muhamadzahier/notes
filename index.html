@@ -200,6 +200,49 @@
     <div id="insights-body" class="insights-body"></div>
   </aside>
 
+  <!-- ═══════════ Chat Panel (Drawer) ═══════════ -->
+  <div id="chat-backdrop" class="chat-backdrop"></div>
+  <aside id="chat-panel" class="chat-panel">
+    <div class="chat-header">
+      <div class="chat-header-title">
+        <h2>AI Tutor Chat</h2>
+        <span id="chat-section-title">Section Title</span>
+      </div>
+      <div class="chat-header-actions">
+        <button id="clear-chat-btn" class="icon-btn" title="Clear History">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+        </button>
+        <button id="close-chat" class="icon-btn" title="Close">&times;</button>
+      </div>
+    </div>
+    
+    <div id="chat-messages" class="chat-messages">
+      <!-- Message bubbles go here -->
+    </div>
+
+    <div id="chat-typing" class="chat-typing hidden">
+      <div class="typing-dots">
+        <span></span><span></span><span></span>
+      </div>
+      <span class="typing-text">AI is thinking...</span>
+    </div>
+
+    <div class="chat-footer">
+      <div id="chat-quick-prompts" class="chat-quick-prompts">
+        <button class="quick-prompt-btn" data-prompt="Simplify this section">Simplify</button>
+        <button class="quick-prompt-btn" data-prompt="Explain the key equations in detail">Explain Equations</button>
+        <button class="quick-prompt-btn" data-prompt="Give me a conceptual practice question with solution">Practice Quiz</button>
+        <button class="quick-prompt-btn" data-prompt="Explain this section using a real-world analogy">Analogy</button>
+      </div>
+      <div class="chat-input-row">
+        <textarea id="chat-input" placeholder="Ask AI about this section... (Shift+Enter for new line)" rows="1"></textarea>
+        <button id="send-chat-btn" class="btn-primary" title="Send message">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
   <!-- ═══════════ Lightbox ═══════════ -->
   <div id="lightbox" class="lightbox-overlay hidden">
     <img id="lightbox-img" src="" alt="Enlarged image">
