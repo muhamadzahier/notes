@@ -46,10 +46,11 @@ Return a single valid JSON object (no markdown fences, no text outside the JSON)
    - "equations": Array of { "label": string, "latex": string } for the section's key equations.
      Use proper LaTeX: \\vec{}, \\frac{}, \\int, \\oint, \\nabla, \\partial, Greek letters, etc.
    - "visualization": Object specifying an interactive visualization for this concept:
-     - "type": One of "field2d" | "wave" | "plot" | "3d"
-     - "title": Short descriptive title
-     - "description": Interactivity hint (e.g., "Drag the charges to see the field change")
-     - "config": Type-specific configuration:
+      - "type": One of "html" | "field2d" | "wave" | "plot" | "3d"
+      - "title": Short descriptive title
+      - "description": Interactivity hint (e.g., "Drag the charges to see the field change")
+      - "html": (Required if type is "html") A complete, self-contained, responsive HTML5 string (with inline CSS in <style> and interactive Javascript in <script>) representing a premium interactive simulation. It should have controls, animations, beautiful styling, and explain the concept interactively. It can load common CDN scripts (like three.js, chart.js, tailwind, etc.) if needed.
+      - "config": Type-specific configuration (Only if type is field2d, wave, plot, or 3d):
 
        For "field2d" (2D electric/magnetic field visualization):
        { "sources": [{ "x": 0-1, "y": 0-1, "strength": number, "label": "string", "type": "charge"|"current" }],
@@ -82,8 +83,7 @@ RULES:
 - LaTeX: use standard notation (\\vec, \\frac, \\int, \\nabla, etc.)
 - Each section MUST have at least one visualization.
 - pdfPages must reference real page numbers from the document.
-- Choose visualization types that best illustrate the physics/math:
-  field2d for E/B fields, wave for waves/oscillations, plot for relationships/graphs, 3d for geometry/surfaces.
+- Choose visualization types that best illustrate the physics/math. Prefer type "html" to generate custom, robust, and highly interactive HTML5/CSS/JS simulations specifically tailored to the topic (e.g., a charging circuit, ray optics bench, thermodynamic cycles, vector field animations). Fall back to "field2d", "wave", "plot", or "3d" configs only if a simple pre-defined canvas matches.
 - Be THOROUGH. Each section should be 300-600 words of explanation. This must be BETTER than reading the PDF.`;
 
 /* ──────────────────────────────────────────────
@@ -186,68 +186,48 @@ GUIDELINES:
 3. Use LaTeX for math equations. Use $...$ for inline math and $$...$$ for display math block equations. Always explain variables and symbols when equations are introduced or when asked.
 4. If the student asks to simplify a concept or equation, break it down step-by-step.
 5. If the student asks for practice questions/quizzes, design a conceptual or numerical quiz, provide the question, and explain the solution step-by-step.
-6. You are equipped to suggest interactive visual simulations to help the student understand or illustrate a quiz.
-   You MUST dynamically design the visualization configuration specifically for the concept or problem being discussed. DO NOT copy the template examples verbatim. Adjust coordinates, numbers of charges/wires, wave parameters, math expressions, axes, and labels to fit the topic.
+6. You are equipped to suggest interactive visual simulations to help the student understand or illustrate a concept or quiz.
+   Instead of using simple hardcoded templates, you MUST write complete, self-contained HTML5 code for interactive visual simulations specifically tailored to the topic being discussed.
+   Format your HTML5 simulation inside a fenced code block with the language label "html-viz" at the end of your response.
 
-   CRITICAL FOR FIELD2D DIVERSITY (2D Vector Fields):
-   If the student asks to visualize a magnetostatic or electrostatic concept, NEVER generate a single wire or charge at the center (0.5, 0.5) (e.g. Oersted's wire) unless explicitly requested. A single wire is too basic. Instead, design interesting multi-source setups:
-   - Two Parallel Currents (Same Direction): 2 current sources (type: 'current') at x=0.35, y=0.5 (strength 1.5, label "I1") and x=0.65, y=0.5 (strength 1.5, label "I2"). Shows field reinforcement/force.
-   - Two Anti-Parallel Currents (Opposite): 2 current sources (type: 'current') at x=0.35, y=0.5 (strength 1.5, label "I1") and x=0.65, y=0.5 (strength -1.5, label "I2"). Shows field cancellation/deflection.
-   - Electric Dipole: 2 charge sources (type: 'charge') at x=0.35, y=0.5 (strength 1.5, label "+q") and x=0.65, y=0.5 (strength -1.5, label "-q").
-   - Electric Quadrupole: 4 charge sources in a square: x=0.35, y=0.35 (strength 1.0, label "+"), x=0.65, y=0.35 (strength -1.0, label "-"), x=0.35, y=0.65 (strength -1.0, label "-"), x=0.65, y=0.65 (strength 1.0, label "+").
-   - Solenoid Field Approximation: A top row of positive currents (e.g. 3 currents at y=0.3, x=0.3, 0.5, 0.7) and a bottom row of negative currents (e.g. 3 currents at y=0.7, x=0.3, 0.5, 0.7) to show a uniform field inside a coil.
+   Inside the html-viz block:
+   - It MUST be a complete standalone HTML document starting with <!DOCTYPE html> and containing <html>, <head> (with <title> tag and any meta tags), and <body>.
+   - The <title> tag should be the name of the simulation (e.g. <title>RLC Circuit Simulator</title>).
+   - Include a comment at the top of the file to provide an interactivity hint/description: <!-- description: Drag sliders and click components to interact with the simulation. -->
+   - Style it beautifully and modernly with CSS inside a <style> tag. Use sleek gradients, tailored colors (like slate, indigo, HSL palettes), and clear layouts.
+   - Add interactive controls (sliders, buttons, checkboxes) so the student can change parameters and see the animation update dynamically.
+   - Make it fully responsive (adapts to parent container width/height).
+   - You may load CDNs (e.g., Chart.js, Tailwind CSS, Three.js) if needed.
 
-   CRITICAL FOR PLOT DIVERSITY (2D Curves):
-   If plotting curves, write custom JS math expressions mapping the physical relations:
-   - Biot-Savart Wire Field Falloff: xRange [1, 10], curves: [{ expr: "1 / x", label: "B(r) ∝ 1/r" }] or [{ expr: "1 / (x * x)", label: "B(r) ∝ 1/r²" }].
-   - Coaxial Cable B-Field Profile (B vs radius r): xRange [0.1, 8], curves: [{ expr: "x < 2.5 ? 0.3 * x : 0.75 / x", label: "B(r)" }] showing linear rise inside inner conductor and 1/r falloff outside.
-   - On-Axis Loop Current B-Field: curves: [{ expr: "1 / Math.pow(x*x + 1, 1.5)", label: "B(z) (Loop)" }].
-
-   Format your fenced code block with the language label "json-viz" at the very end of your response:
-
-   a) field2d schema:
-   {
-     "type": "field2d",
-     "title": "Custom Title",
-     "description": "Short explanation of how to interact",
-     "config": {
-       "fieldType": "electric" | "magnetic",
-       "sources": [
-         { "x": float, "y": float, "strength": float, "label": "string", "type": "charge" | "current" }
-       ],
-       "lineCount": integer
-     }
-   }
-
-   b) wave schema:
-   {
-     "type": "wave",
-     "title": "Custom Title",
-     "description": "Short description",
-     "config": {
-       "waveType": "transverse" | "em" | "standing",
-       "frequency": float, // 0.1 to 5.0
-       "amplitude": float, // 0.1 to 2.0
-       "wavelength": integer // 100 to 300
-     }
-   }
-
-   c) plot schema:
-   {
-     "type": "plot",
-     "title": "Custom Title",
-     "config": {
-       "curves": [
-         { "expr": "string JS expr", "color": "#hex", "label": "string" }
-       ],
-       "xRange": [min, max],
-       "yRange": [min, max],
-       "xLabel": "string",
-       "yLabel": "string"
-     }
-   }
-
-   Ensure the JSON inside the fence is 100% valid and correctly escaped. Do not include markdown or other commentary inside the json-viz block itself.`;
+   Example html-viz block format:
+   \`\`\`html-viz
+   <!DOCTYPE html>
+   <html>
+   <head>
+     <title>Pendulum Simulation</title>
+     <!-- description: Adjust the length and gravity to see how the period changes in real-time. -->
+     <script src="https://cdn.tailwindcss.com"></script>
+     <style>
+       /* custom modern styling */
+     </style>
+   </head>
+   <body class="bg-slate-50 p-4 font-sans text-slate-800">
+     <div class="max-w-md mx-auto bg-white p-4 rounded-xl shadow-md">
+       <h3 class="text-lg font-semibold mb-2">Interactive Pendulum</h3>
+       <canvas id="pendulumCanvas" class="w-full h-48 bg-slate-100 rounded-lg"></canvas>
+       <div class="mt-4">
+         <label class="block text-sm">Length: <span id="lenVal">150</span>px</label>
+         <input type="range" id="lenSlider" min="50" max="200" value="150" class="w-full">
+       </div>
+     </div>
+     <script>
+       // simulation logic...
+     </script>
+   </body>
+   </html>
+   \`\`\`
+   
+   Ensure the HTML inside the fence is valid and doesn't contain errors. Do not include markdown or other commentary inside the html-viz block itself. You may also still fall back to recommending standard "json-viz" configurations if the concept is extremely basic and fits one of the existing visualizers (field2d, wave, plot, 3d), but prefer "html-viz" for custom visual needs.`;
 
   // Map history to Gemini's content roles
   // Gemini expects: { role: 'user' | 'model', parts: [{ text: '...' }] }

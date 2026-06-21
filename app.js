@@ -244,7 +244,12 @@ function bindEvents() {
   if (window.visualViewport) {
     window.visualViewport.addEventListener('resize', () => {
       if (activeChatSectionIdx !== null && dom.chatPanel.classList.contains('open')) {
-        dom.chatPanel.style.height = `${window.visualViewport.height}px`;
+        const isKeyboardOpen = window.visualViewport.height < window.innerHeight - 60;
+        if (isKeyboardOpen) {
+          dom.chatPanel.style.height = `${window.visualViewport.height}px`;
+        } else {
+          dom.chatPanel.style.height = '';
+        }
         dom.chatMessages.scrollTop = dom.chatMessages.scrollHeight;
       }
     });
@@ -657,27 +662,46 @@ function createSectionCard(section, idx) {
     const vizTitle = section.visualization.title || 'Interactive Visualization';
     const vizDesc = section.visualization.description || '';
 
-    vizWrap.innerHTML = `
-      <div class="viz-head"><h3>${esc(vizTitle)}</h3></div>
-      <div class="viz-canvas-wrap"><canvas class="viz-canvas"></canvas></div>
-      ${vizDesc ? `<p class="viz-hint">Hint: ${esc(vizDesc)}</p>` : ''}`;
+    if (section.visualization.type === 'html') {
+      vizWrap.innerHTML = `
+        <div class="viz-head"><h3>${esc(vizTitle)}</h3></div>
+        <div class="viz-iframe-wrap">
+          <iframe class="viz-iframe" sandbox="allow-scripts"></iframe>
+        </div>
+        ${vizDesc ? `<p class="viz-hint">Hint: ${esc(vizDesc)}</p>` : ''}`;
 
-    card.appendChild(vizWrap);
+      card.appendChild(vizWrap);
 
-    // Initialize viz after DOM insertion (need dimensions)
-    requestAnimationFrame(() => {
-      const canvas = vizWrap.querySelector('.viz-canvas');
-      if (canvas) {
-        try {
-          const viz = createVisualization(canvas, section.visualization);
-          if (viz) {
-            activeVisualizers.push(viz);
-            const controls = viz.getControls?.();
-            if (controls) vizWrap.appendChild(controls);
-          }
-        } catch (e) { console.warn('Viz init failed:', e); }
-      }
-    });
+      // Set srcdoc dynamically
+      requestAnimationFrame(() => {
+        const iframe = vizWrap.querySelector('.viz-iframe');
+        if (iframe) {
+          iframe.srcdoc = section.visualization.html || '';
+        }
+      });
+    } else {
+      vizWrap.innerHTML = `
+        <div class="viz-head"><h3>${esc(vizTitle)}</h3></div>
+        <div class="viz-canvas-wrap"><canvas class="viz-canvas"></canvas></div>
+        ${vizDesc ? `<p class="viz-hint">Hint: ${esc(vizDesc)}</p>` : ''}`;
+
+      card.appendChild(vizWrap);
+
+      // Initialize viz after DOM insertion (need dimensions)
+      requestAnimationFrame(() => {
+        const canvas = vizWrap.querySelector('.viz-canvas');
+        if (canvas) {
+          try {
+            const viz = createVisualization(canvas, section.visualization);
+            if (viz) {
+              activeVisualizers.push(viz);
+              const controls = viz.getControls?.();
+              if (controls) vizWrap.appendChild(controls);
+            }
+          } catch (e) { console.warn('Viz init failed:', e); }
+        }
+      });
+    }
   }
 
   // Bind PDF toggle
@@ -1152,9 +1176,6 @@ async function openChat(sectionIdx) {
   // Slide in panel and backdrop
   dom.chatPanel.classList.add('open');
   dom.chatBackdrop.classList.add('open');
-  if (window.visualViewport) {
-    dom.chatPanel.style.height = `${window.visualViewport.height}px`;
-  }
   
   // Reset input value & height
   dom.chatInput.value = '';
@@ -1254,6 +1275,28 @@ function renderMessage(role, text) {
     }
     return ''; // Strip block from rendered message
   });
+
+  // Extract custom html-viz code blocks
+  processedText = processedText.replace(/```html-viz\s*([\s\S]*?)```/g, (match, htmlStr) => {
+    try {
+      const htmlCode = htmlStr.trim();
+      const titleMatch = htmlCode.match(/<title>([\s\S]*?)<\/title>/i);
+      const title = titleMatch ? titleMatch[1].trim() : 'Interactive Simulation';
+      
+      const descMatch = htmlCode.match(/<!--\s*description:\s*([\s\S]*?)\s*-->/i);
+      const description = descMatch ? descMatch[1].trim() : '';
+
+      vizConfigs.push({
+        type: 'html',
+        title,
+        description,
+        html: htmlCode
+      });
+    } catch (e) {
+      console.warn('Failed to process html-viz block:', e);
+    }
+    return ''; // Strip block from rendered message
+  });
   
   const html = renderMathMarkdown(processedText.trim());
   
@@ -1290,7 +1333,10 @@ function toggleInlineVisualizer(bubble, btn, vizConfig) {
   const existing = (nextEl && nextEl.classList.contains('chat-viz-container')) ? nextEl : null;
   if (existing) {
     existing.remove();
-    if (activeChatVisualizer && activeChatVisualizer.canvas === existing.querySelector('canvas')) {
+    if (activeChatVisualizer && (
+      (activeChatVisualizer.canvas && activeChatVisualizer.canvas === existing.querySelector('canvas')) ||
+      (activeChatVisualizer.iframe && activeChatVisualizer.iframe === existing.querySelector('iframe'))
+    )) {
       cleanupChatVisualizer();
     }
     return;
@@ -1300,40 +1346,77 @@ function toggleInlineVisualizer(bubble, btn, vizConfig) {
   
   const container = document.createElement('div');
   container.className = 'chat-viz-container';
-  container.innerHTML = `
-    <div class="chat-viz-header">
-      <h4>${esc(vizConfig.title || 'Simulation')}</h4>
-      <button class="chat-viz-close" title="Close">&times;</button>
-    </div>
-    <div class="chat-viz-body">
-      <canvas class="chat-viz-canvas"></canvas>
-    </div>`;
-  
-  btn.after(container);
-  
-  const canvas = container.querySelector('.chat-viz-canvas');
-  const closeBtn = container.querySelector('.chat-viz-close');
-  const body = container.querySelector('.chat-viz-body');
-  
-  try {
-    const viz = createVisualization(canvas, vizConfig);
-    if (viz) {
-      activeChatVisualizer = viz;
-      viz.canvas = canvas; // Keep track of the active canvas
-      const controls = viz.getControls?.();
-      if (controls) body.appendChild(controls);
+
+  if (vizConfig.type === 'html') {
+    container.innerHTML = `
+      <div class="chat-viz-header">
+        <h4>${esc(vizConfig.title || 'Simulation')}</h4>
+        <button class="chat-viz-close" title="Close">&times;</button>
+      </div>
+      <div class="chat-viz-body" style="padding: 0;">
+        <div class="chat-iframe-wrap">
+          <iframe class="chat-viz-iframe" sandbox="allow-scripts"></iframe>
+        </div>
+      </div>`;
+    
+    btn.after(container);
+    
+    const iframe = container.querySelector('.chat-viz-iframe');
+    const closeBtn = container.querySelector('.chat-viz-close');
+    
+    try {
+      iframe.srcdoc = vizConfig.html || '';
+      activeChatVisualizer = {
+        iframe,
+        destroy: () => {}
+      };
+    } catch (e) {
+      console.error('Failed to initialize iframe visualizer:', e);
+      container.querySelector('.chat-viz-body').innerHTML = '<p style="font-size:0.7rem;color:#c44;padding:8px">Failed to load simulation.</p>';
     }
-  } catch (e) {
-    console.error('Failed to initialize chatbot visualizer:', e);
-    body.innerHTML = '<p style="font-size:0.7rem;color:#c44;padding:8px">Failed to load visualization.</p>';
+    
+    closeBtn.addEventListener('click', () => {
+      container.remove();
+      if (activeChatVisualizer && activeChatVisualizer.iframe === iframe) {
+        cleanupChatVisualizer();
+      }
+    });
+  } else {
+    container.innerHTML = `
+      <div class="chat-viz-header">
+        <h4>${esc(vizConfig.title || 'Simulation')}</h4>
+        <button class="chat-viz-close" title="Close">&times;</button>
+      </div>
+      <div class="chat-viz-body">
+        <canvas class="chat-viz-canvas"></canvas>
+      </div>`;
+    
+    btn.after(container);
+    
+    const canvas = container.querySelector('.chat-viz-canvas');
+    const closeBtn = container.querySelector('.chat-viz-close');
+    const body = container.querySelector('.chat-viz-body');
+    
+    try {
+      const viz = createVisualization(canvas, vizConfig);
+      if (viz) {
+        activeChatVisualizer = viz;
+        viz.canvas = canvas; // Keep track of the active canvas
+        const controls = viz.getControls?.();
+        if (controls) body.appendChild(controls);
+      }
+    } catch (e) {
+      console.error('Failed to initialize chatbot visualizer:', e);
+      body.innerHTML = '<p style="font-size:0.7rem;color:#c44;padding:8px">Failed to load visualization.</p>';
+    }
+    
+    closeBtn.addEventListener('click', () => {
+      container.remove();
+      if (activeChatVisualizer === viz) {
+        cleanupChatVisualizer();
+      }
+    });
   }
-  
-  closeBtn.addEventListener('click', () => {
-    container.remove();
-    if (activeChatVisualizer === viz) {
-      cleanupChatVisualizer();
-    }
-  });
   
   // Scroll to reveal visualizer
   requestAnimationFrame(() => {
