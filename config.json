@@ -1,0 +1,34 @@
+{
+  "courses": [
+    {
+      "id": "em-theory",
+      "name": "Electromagnetic Theory",
+      "code": "NMJ21803",
+      "semester": "Semester 2",
+      "accent": "#5B6EE1",
+      "documents": [
+        {
+          "id": "merged-notes",
+          "title": "Chapter 3: Magnetostatics",
+          "path": "semester 2/Electromagnetic Theory/notes/ilovepdf_merged (1).pdf",
+          "preGeneratedNotes": "semester 2/Electromagnetic Theory/notes/ilovepdf_merged (1).json",
+          "type": "notes"
+        },
+        {
+          "id": "ch4",
+          "title": "Chapter 4: Time-Varying Fields",
+          "path": "semester 2/Electromagnetic Theory/notes/NMJ21803 - Chapter 4.pdf",
+          "preGeneratedNotes": "semester 2/Electromagnetic Theory/notes/NMJ21803 - Chapter 4.json",
+          "type": "notes"
+        },
+        {
+          "id": "tutorial-c3",
+          "title": "Chapter 3 Tutorial Solutions",
+          "path": "semester 2/Electromagnetic Theory/question paper/NMJ21803 - Tutorial C3.pdf",
+          "preGeneratedNotes": "semester 2/Electromagnetic Theory/question paper/NMJ21803 - Tutorial C3.json",
+          "type": "question paper"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Course Notes — AI Study Companion</title>
+  <meta name="description" content="Interactive AI-powered course note viewer with KaTeX math, interactive physics visualizations, and Gemini-generated study notes.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- KaTeX (Math) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+
+  <!-- PDF.js -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+
+  <!-- Marked (Markdown) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+
+  <!-- Mermaid (Diagrams) -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+
+  <!-- Three.js (3D) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- Highlight.js -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- ═══════════ Settings Modal ═══════════ -->
+  <div id="settings-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>API Configuration</h2>
+        <button id="settings-close" class="icon-btn" aria-label="Close">&times;</button>
+      </div>
+      <div class="modal-body">
+        <label for="api-key-input" class="input-label">Gemini API Key</label>
+        <p class="input-hint">Paste your key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>. Stored in your browser only.</p>
+        <div class="input-row">
+          <input type="password" id="api-key-input" class="text-input" placeholder="AIza..." autocomplete="off" spellcheck="false">
+          <button id="toggle-key-vis" class="icon-btn" title="Show/hide">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <div class="modal-actions">
+          <button id="save-key-btn" class="btn-primary">Save Key</button>
+          <button id="clear-key-btn" class="btn-ghost">Clear</button>
+        </div>
+        <p id="key-status" class="key-status hidden"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ Toast ═══════════ -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- ═══════════ Screen 1 · Homescreen ═══════════ -->
+  <div id="homescreen" class="screen">
+    <header class="app-header">
+      <div class="header-left">
+        <h1 class="app-title">Course Notes</h1>
+        <span class="app-subtitle">AI Study Companion</span>
+      </div>
+      <button id="settings-btn" class="icon-btn settings-trigger" title="API Settings">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </header>
+    <main id="course-grid" class="course-grid"></main>
+  </div>
+
+  <!-- ═══════════ Screen 2 · Workspace ═══════════ -->
+  <div id="workspace" class="screen hidden">
+    <header class="app-header">
+      <div class="header-left">
+        <button id="back-btn" class="icon-btn" title="Back">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 12H5M5 12l7-7M5 12l7 7"/></svg>
+        </button>
+        <button id="menu-toggle-btn" class="icon-btn mobile-only-btn" title="Table of Contents">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+        </button>
+        <h1 id="workspace-title" class="app-title"></h1>
+      </div>
+      <div class="header-actions">
+        <button id="text-settings-btn" class="icon-btn" title="Reading Settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
+        </button>
+        <button id="ws-settings-btn" class="icon-btn settings-trigger" title="API Settings">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="workspace-body">
+      <!-- Sidebar Table of Contents -->
+      <aside id="sidebar-nav" class="sidebar-nav">
+        <div class="sidebar-header">Table of Contents</div>
+        <nav id="document-list" class="document-list"></nav>
+      </aside>
+
+      <!-- Main Scrollable Frame -->
+      <main class="workspace-main">
+        <!-- Reading Settings Panel -->
+        <div id="reading-settings-dropdown" class="reading-settings-dropdown hidden">
+          <div class="settings-group">
+            <span class="group-label">Font Family</span>
+            <div class="font-options">
+              <button class="font-btn active" data-font="sans">Sans</button>
+              <button class="font-btn" data-font="serif">Serif</button>
+              <button class="font-btn" data-font="mono">Mono</button>
+            </div>
+          </div>
+          <div class="settings-group">
+            <span class="group-label">Text Size (<span id="font-size-val">16px</span>)</span>
+            <div class="slider-container" style="display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 6px;">
+              <span style="font-size: 11px; color: #888; user-select: none;">A-</span>
+              <input type="range" id="font-size-slider" min="12" max="26" step="1" value="16" style="flex: 1; height: 4px; border-radius: 2px; background: #eee; outline: none; cursor: pointer; accent-color: #111; -webkit-appearance: none;">
+              <span style="font-size: 15px; color: #888; user-select: none;">A+</span>
+            </div>
+          </div>
+          <div class="settings-group">
+            <span class="group-label">Width</span>
+            <div class="width-options">
+              <button class="width-btn active" data-width="wide">Wide</button>
+              <button class="width-btn" data-width="reading">Reading</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Scrollable Content -->
+        <main class="workspace-content" id="workspace-content">
+
+          <!-- Control Bar -->
+          <div class="control-bar" id="control-bar">
+            <button id="generate-btn" class="btn-primary" disabled>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;vertical-align:-1px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              Generate Notes
+            </button>
+            <span id="cache-indicator" class="cache-badge hidden">cached</span>
+          </div>
+
+          <!-- Skeleton -->
+          <div id="skeleton-loader" class="skeleton-container hidden">
+            <div class="skeleton-card"><div class="skeleton-line w40"></div><div class="skeleton-line w100"></div><div class="skeleton-line w90"></div><div class="skeleton-line w70"></div><div class="skeleton-block"></div></div>
+            <div class="skeleton-card"><div class="skeleton-line w35"></div><div class="skeleton-line w100"></div><div class="skeleton-line w85"></div><div class="skeleton-block tall"></div></div>
+            <div class="skeleton-card"><div class="skeleton-line w30"></div><div class="skeleton-line w100"></div><div class="skeleton-line w60"></div><div class="skeleton-block"></div></div>
+          </div>
+
+          <!-- Loading Status -->
+          <p id="loading-status" class="loading-status hidden"></p>
+
+          <!-- Document Overview -->
+          <div id="overview-section" class="overview-section hidden"></div>
+
+          <!-- Concept Map -->
+          <section id="mindmap-section" class="insight-section hidden">
+            <h2 class="section-heading">Concept Map</h2>
+            <div id="mindmap-content" class="section-body mindmap-wrap"></div>
+          </section>
+
+          <!-- Sections Container -->
+          <div id="sections-container"></div>
+
+          <!-- Extracted Images -->
+          <section id="images-section" class="insight-section hidden">
+            <h2 class="section-heading">Extracted Images</h2>
+            <div id="images-content" class="section-body image-gallery"></div>
+          </section>
+
+          <!-- Empty State -->
+          <div id="empty-state" class="empty-state">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <p>Select a document and click <strong>Generate Notes</strong> to begin.</p>
+          </div>
+        </main> <!-- /workspace-content -->
+      </main> <!-- /workspace-main -->
+    </div> <!-- /workspace-body -->
+  </div> <!-- /workspace -->
+
+  <!-- ═══════════ Insights Panel (Drawer) ═══════════ -->
+  <div id="insights-backdrop" class="insights-backdrop"></div>
+  <aside id="insights-panel" class="insights-panel">
+    <div class="insights-header">
+      <h2>AI Enhancement</h2>
+      <button id="close-insights" class="icon-btn" title="Close">&times;</button>
+    </div>
+    <div id="insights-loading" class="insights-loading hidden">
+      <div class="spinner"></div>
+      <p>Generating suggestions…</p>
+    </div>
+    <div id="insights-body" class="insights-body"></div>
+  </aside>
+
+  <!-- ═══════════ Lightbox ═══════════ -->
+  <div id="lightbox" class="lightbox-overlay hidden">
+    <img id="lightbox-img" src="" alt="Enlarged image">
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

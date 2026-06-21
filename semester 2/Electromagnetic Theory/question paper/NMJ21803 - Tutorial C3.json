@@ -1,0 +1,413 @@
+{
+  "documentTitle": "Chapter 3 Tutorial Solutions: Magnetostatics",
+  "overview": "This document contains detailed, step-by-step solved solutions for all 10 practice problems in the Chapter 3 Tutorial on Magnetostatics. Each solution builds physical intuition, defines the coordinate system, derives formulas from base laws, and performs numerical calculations. Key formulas include Biot-Savart, Ampere's Law, forces on conductors, vector potentials, and self-inductance.",
+  "sections": [
+    {
+      "title": "Question 1: Semi-Infinite Filamentary Conductor",
+      "pdfPages": [
+        1
+      ],
+      "content": "### Problem Statement\n\nConsider a semi-infinite filamentary conductor carrying a current of $5\\text{ A}$ in the positive-$y$ direction along the $y$-axis (from $y=0$ to $y=\\infty$). Find the magnetic flux density $\\vec{B}$ at point $P(4, 6, 0)$ using Biot-Savart's Law. This problem is on [Page 1](pdf-page://1) of the tutorial sheet.\n\n### Analytical Solution\n\n1. **Identify the Geometry**:\n   - The current $I = 5\\text{ A}$ flows along the positive $y$-axis starting at the origin $y=0$ and extending to $y \\to +\\infty$.\n   - The field point is $P(4,6,0)$.\n   - The perpendicular distance $\\rho$ from the field point to the conductor ($y$-axis) is $x = 4\\text{ m}$.\n\n2. **Biot-Savart Law Formulation**:\n   For any straight wire segment carrying current, the magnetic field intensity $\\vec{H}$ is:\n   $$\\vec{H} = \\frac{I}{4\\pi \\rho} (\\cos \\alpha_2 - \\cos \\alpha_1) \\hat{a}_{\\phi}$$\n   Here, $\\alpha_1$ and $\\alpha_2$ are the angles between the wire and the line connecting the wire ends to the field point $P$.\n   - At the starting point $y=0$, the vector from $(0,0,0)$ to $P(4,6,0)$ is $\\vec{R}_1 = 4\\hat{a}_x + 6\\hat{a}_y$. The angle $\\alpha_1$ satisfies:\n     $$\\cos \\alpha_1 = \\frac{\\vec{R}_1 \\cdot \\hat{a}_y}{|\\vec{R}_1|} = \\frac{6}{\\sqrt{4^2 + 6^2}} = \\frac{6}{\\sqrt{52}} \\approx 0.832$$\n   - At the infinite end $y \\to \\infty$, the angle $\\alpha_2 \\to 180^\\circ$ (or $\\pi$), so $\\cos \\alpha_2 = -1$.\n\n3. **Calculate H Field**:\n   Using the Right-Hand Rule: pointing your thumb in the direction of the current ($+y$) and curling your fingers to the field point ($x=4$) gives a field in the $-\\hat{a}_z$ direction. Therefore:\n   $$\\vec{H} = -\\hat{a}_z \\frac{I}{4\\pi \\rho} (\\cos \\alpha_2 - \\cos \\alpha_1)$$\n   $$\\vec{H} = -\\hat{a}_z \\frac{5}{4\\pi (4)} (-1 - 0.832) = -\\hat{a}_z \\frac{5}{16\\pi} (-1.832) \\approx -0.182\\hat{a}_z\\text{ A/m}$$\n\n4. **Find Magnetic Flux Density B**:\n   $$\\vec{B} = \\mu_0 \\vec{H} = (4\\pi \\times 10^{-7}) (-0.182\\hat{a}_z) \\approx -2.29 \\times 10^{-7} \\hat{a}_z\\text{ T} = -229 \\hat{a}_z\\text{ nT}$$\n\n*(Note: While some references list the answer as $-21\\text{ nT}$ under different limits or coordinate systems, this is the exact derivation from the parameters given in the question).* See the field visualizer to verify circular field curling.",
+      "equations": [
+        {
+          "label": "Finite Wire Field",
+          "latex": "H = \\frac{I}{4\\pi \\rho}(\\cos\\alpha_2 - \\cos\\alpha_1)"
+        },
+        {
+          "label": "Distance to y-axis",
+          "latex": "\\rho = \\sqrt{x^2 + z^2}"
+        }
+      ],
+      "visualization": {
+        "type": "field2d",
+        "title": "Oersted Field Line of Filament",
+        "description": "Magnetic field loops around the filament. The strength decreases with radial distance.",
+        "config": {
+          "fieldType": "magnetic",
+          "lineCount": 12,
+          "sources": [
+            {
+              "x": 0.5,
+              "y": 0.5,
+              "strength": 1.0,
+              "label": "I",
+              "type": "current"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Question 2: Triangular Current Loop",
+      "pdfPages": [
+        1
+      ],
+      "content": "### Problem Statement\n\nA conducting triangular loop carries a current of $10\\text{ A}$. Find $\\vec{H}$ at $P(0, 0, 5)$ due to side 1 of the loop. This problem is on [Page 1](pdf-page://1) of the tutorial sheet.\n\n### Analytical Solution\n\n1. **Identify Side 1 Geometry**:\n   - Side 1 lies along the $x$-axis from $x=0$ to $x=4$ (with $y=0, z=0$).\n   - Current $I = 10\\text{ A}$ flows from origin $(0,0,0)$ to $(4,0,0)$ along $+x$ direction.\n   - The field point is $P(0,0,5)$.\n   - The perpendicular distance $\\rho$ from $P$ to the $x$-axis is $z = 5\\text{ m}$.\n\n2. **Biot-Savart Law Formulation**:\n   Using the straight wire segment formula:\n   $$\\vec{H} = \\frac{I}{4\\pi \\rho} (\\cos \\alpha_2 - \\cos \\alpha_1) \\hat{a}_{\\phi}$$\n   Let's find the angles for the segment from $x_1=0$ to $x_2=4$:\n   - Starting point $x_1=0$: the line from the origin to $P(0,0,5)$ is perpendicular to the $x$-axis, so $\\alpha_1 = 90^\\circ$ and $\\cos \\alpha_1 = 0$.\n   - Ending point $x_2=4$: the vector from $(4,0,0)$ to $P(0,0,5)$ is $\\vec{R}_2 = -4\\hat{a}_x + 5\\hat{a}_z$. The angle $\\alpha_2$ is between $+x$ direction and $\\vec{R}_2$, so:\n     $$\\cos \\alpha_2 = \\frac{\\vec{R}_2 \\cdot \\hat{a}_x}{|\\vec{R}_2|} = \\frac{-4}{\\sqrt{(-4)^2 + 5^2}} = \\frac{-4}{\\sqrt{41}} \\approx -0.625$$\n\n3. **Compute the Field Magnitude**:\n   Substitute the values into the formula:\n   $$H = \\frac{10}{4\\pi (5)} (-0.625 - 0) = \\frac{10}{20\\pi} (-0.625) = \\frac{-6.25}{20\\pi} \\approx -0.0995\\text{ A/m}$$\n\n4. **Determine Direction**:\n   Using the Right-Hand Rule: Point your thumb along the current ($+x$), and curl your fingers towards the field point $P(0,0,5)$ along $+z$. Your curled fingers point in the $-\\hat{a}_y$ direction. Thus:\n   $$\\vec{H} = -0.0995 \\hat{a}_y\\text{ A/m} = -99.5\\hat{a}_y\\text{ mA/m}$$",
+      "equations": [
+        {
+          "label": "Straight Wire Formula",
+          "latex": "H = \\frac{I}{4\\pi \\rho}(\\cos\\alpha_2 - \\cos\\alpha_1)"
+        }
+      ],
+      "visualization": {
+        "type": "field2d",
+        "title": "Field of a Segment",
+        "description": "Notice how the field lines curl around a finite current segment, dropping off rapidly at the ends.",
+        "config": {
+          "fieldType": "magnetic",
+          "lineCount": 10,
+          "sources": [
+            {
+              "x": 0.5,
+              "y": 0.5,
+              "strength": 1.2,
+              "label": "I",
+              "type": "current"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Question 3: On-Axis Field of a Circular Loop",
+      "pdfPages": [
+        1
+      ],
+      "content": "### Problem Statement\n\nA circular loop located on $x^2 + y^2 = 9, z = 0$ carries a direct current of $10\\text{ A}$ along $\\hat{a}_\\phi$. Determine $\\vec{H}$ at $(0, 0, 4)$ and $(0, 0, -4)$. This problem is on [Page 1](pdf-page://1) of the tutorial sheet.\n\n### Analytical Solution\n\n1. **Identify the Geometry**:\n   - The loop has radius $a = 3\\text{ m}$ ($a^2 = 9$) and lies in the $xy$-plane ($z=0$).\n   - Current $I = 10\\text{ A}$ flows in the counterclockwise direction along $\\hat{a}_\\phi$.\n   - The field points lie along the loop's central axis at heights $z = 4\\text{ m}$ and $z = -4\\text{ m}$.\n\n2. **The On-Axis Circular Loop Formula**:\n   Using the derived loop formula:\n   $$\\vec{H} = \\frac{I a^2}{2(a^2 + z^2)^{3/2}} \\hat{a}_z$$\n\n3. **Compute Field at (0, 0, 4)**:\n   Substitute $a = 3$, $I = 10$, $z = 4$:\n   $$\\vec{H}(0,0,4) = \\frac{10 \\times (3)^2}{2(3^2 + 4^2)^{3/2}} \\hat{a}_z = \\frac{90}{2(9 + 16)^{3/2}} \\hat{a}_z = \\frac{90}{2(25)^{3/2}} \\hat{a}_z$$\n   Since $25^{3/2} = 5^3 = 125$:\n   $$\\vec{H}(0,0,4) = \\frac{90}{250} \\hat{a}_z = 0.36 \\hat{a}_z \\text{ A/m}$$\n\n4. **Compute Field at (0, 0, -4)**:\n   Substitute $z = -4$. Since $z^2 = (-4)^2 = 16$, the denominator remains unchanged:\n   $$\\vec{H}(0,0,-4) = \\frac{10 \\times 3^2}{2(3^2 + (-4)^2)^{3/2}} \\hat{a}_z = 0.36 \\hat{a}_z \\text{ A/m}$$\n   Note that the field points in the $+\\hat{a}_z$ direction at both locations. The magnetic field lines form continuous loops, passing straight up through the loop center and continuing upward on both sides.",
+      "equations": [
+        {
+          "label": "Circular Loop On-Axis Field",
+          "latex": "H = \\frac{I a^2}{2(a^2 + z^2)^{3/2}}"
+        }
+      ],
+      "visualization": {
+        "type": "plot",
+        "title": "On-Axis Field Decay",
+        "description": "This curve shows how the magnetic field intensity H_z decays as you move up the axis (z) away from the center of a circular loop.",
+        "config": {
+          "curves": [
+            {
+              "expr": "0.36 / (1 + x*x/9)**1.5",
+              "color": "#e74c3c",
+              "label": "H_z(z) [A/m]"
+            }
+          ],
+          "xRange": [
+            -6,
+            6
+          ],
+          "yRange": [
+            0,
+            0.5
+          ],
+          "xLabel": "Axis height z [m]",
+          "yLabel": "Field Intensity H_z"
+        }
+      }
+    },
+    {
+      "title": "Question 4: Parallel Infinite Sheets of Current",
+      "pdfPages": [
+        1
+      ],
+      "content": "### Problem Statement\n\nPlanes $z=0$ and $z=4$ carry current sheets $\\vec{K} = -\\hat{a}_x 10\\text{ A/m}$ and $\\vec{K} = \\hat{a}_x 10\\text{ A/m}$, respectively. Determine $\\vec{H}$ at (a) $(1, 1, 1)$ and (b) $(0, -3, 10)$. This problem is on [Page 1](pdf-page://1) of the tutorial sheet.\n\n### Analytical Solution\n\n1. **Identify the Layout**:\n   - Sheet 1 is at $z=0$ carrying current $\\vec{K}_1 = -10\\hat{a}_x\\text{ A/m}$.\n   - Sheet 2 is at $z=4$ carrying current $\\vec{K}_2 = 10\\hat{a}_x\\text{ A/m}$.\n   - The magnetic field of an infinite current sheet has constant magnitude and points parallel to the sheet:\n     $$\\vec{H} = \\frac{1}{2} \\vec{K} \\times \\hat{a}_n$$\n     where $\\hat{a}_n$ is the unit normal vector pointing **from the sheet towards the field point**.\n\n2. **Solve for Point (1, 1, 1)**:\n   This point lies **between the sheets** ($0 < z < 4$).\n   - For Sheet 1 ($z=0$), the point lies above it, so $\\hat{a}_{n1} = +\\hat{a}_z$:\n     $$\\vec{H}_1 = \\frac{1}{2} (-10\\hat{a}_x) \\times \\hat{a}_z = -5 (\\hat{a}_x \\times \\hat{a}_z) = 5\\hat{a}_y\\text{ A/m}$$\n   - For Sheet 2 ($z=4$), the point lies below it, so $\\hat{a}_{n2} = -\\hat{a}_z$:\n     $$\\vec{H}_2 = \\frac{1}{2} (10\\hat{a}_x) \\times (-\\hat{a}_z) = -5 (\\hat{a}_x \\times \\hat{a}_z) = 5\\hat{a}_y\\text{ A/m}$$\n   - Superposition: $\\vec{H}_{total} = \\vec{H}_1 + \\vec{H}_2 = 10\\hat{a}_y\\text{ A/m}$.\n\n3. **Solve for Point (0, -3, 10)**:\n   This point lies **above both sheets** ($z > 4$).\n   - For Sheet 1 ($z=0$), the point lies above it, so $\\hat{a}_{n1} = +\\hat{a}_z$:\n     $$\\vec{H}_1 = \\frac{1}{2} (-10\\hat{a}_x) \\times \\hat{a}_z = 5\\hat{a}_y\\text{ A/m}$$\n   - For Sheet 2 ($z=4$), the point lies above it, so $\\hat{a}_{n2} = +\\hat{a}_z$:\n     $$\\vec{H}_2 = \\frac{1}{2} (10\\hat{a}_x) \\times \\hat{a}_z = -5\\hat{a}_y\\text{ A/m}$$\n   - Superposition: $\\vec{H}_{total} = \\vec{H}_1 + \\vec{H}_2 = 5\\hat{a}_y - 5\\hat{a}_y = 0\\text{ A/m}$.\n   *(Note: The fields cancel out completely outside the sheets, trapping the magnetic field entirely in the region between them).* See parallel sheet field model.",
+      "equations": [
+        {
+          "label": "Sheet Current Field",
+          "latex": "\\vec{H} = \\frac{1}{2} \\vec{K} \\times \\hat{a}_n"
+        },
+        {
+          "label": "Vector Cross Product",
+          "latex": "\\hat{a}_x \\times \\hat{a}_z = -\\hat{a}_y"
+        }
+      ],
+      "visualization": {
+        "type": "field2d",
+        "title": "Parallel Sheet Field",
+        "description": "Observe how the magnetic field is uniform and directed parallel to the sheets between them, and cancels out to zero outside them.",
+        "config": {
+          "fieldType": "magnetic",
+          "lineCount": 14,
+          "sources": [
+            {
+              "x": 0.3,
+              "y": 0.5,
+              "strength": 2.0,
+              "label": "I",
+              "type": "current"
+            },
+            {
+              "x": 0.7,
+              "y": 0.5,
+              "strength": -2.0,
+              "label": "I",
+              "type": "current"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Question 5: Toroidal Coil Magnetic Field",
+      "pdfPages": [
+        1
+      ],
+      "content": "### Problem Statement\n\nA toroid of circular cross section whose center is at the origin and axis the same as the $z$-axis has $1000$ turns with $\\rho_0 = 10\\text{ cm}$, $a = 1\\text{ cm}$. If the toroid carries a $100\\text{ mA}$ current, find $\\vec{H}$ at: (a) $(3\\text{ cm}, -4\\text{ cm}, 0)$ and (b) $(6\\text{ cm}, 9\\text{ cm}, 0)$. This problem is on [Page 1](pdf-page://1) of the tutorial sheet.\n\n### Analytical Solution\n\n1. **Identify the Geometry of the Toroid**:\n   - Center radius of the loop: $\\rho_0 = 10\\text{ cm} = 0.1\\text{ m}$.\n   - Cross-sectional radius: $a = 1\\text{ cm} = 0.01\\text{ m}$.\n   - The toroid core covers the region $\\rho_0 - a \\le \\rho \\le \\rho_0 + a \\implies 9\\text{ cm} \\le \\rho \\le 11\\text{ cm}$.\n   - Number of turns: $N = 1000$, current $I = 100\\text{ mA} = 0.1\\text{ A}$.\n   - By Ampere's Law, the field inside the toroid is $H = \\frac{N I}{2\\pi \\rho}$, and it is zero outside the core.\n\n2. **Solve for Point A (3 cm, -4 cm, 0)**:\n   - Convert to cylindrical coordinates: $\\rho_A = \\sqrt{3^2 + (-4)^2} = 5\\text{ cm} = 0.05\\text{ m}$.\n   - Since $\\rho_A < 9\\text{ cm}$, the point lies in the inner hole of the toroid core. The enclosed current is zero.\n   - Therefore, $\\vec{H} = 0\\text{ A/m}$.\n\n3. **Solve for Point B (6 cm, 9 cm, 0)**:\n   - Convert to cylindrical coordinates: $\\rho_B = \\sqrt{6^2 + 9^2} = \\sqrt{36 + 81} = \\sqrt{117} \\approx 10.82\\text{ cm} = 0.1082\\text{ m}$.\n   - Since $9\\text{ cm} \\le \\rho_B \\le 11\\text{ cm}$, this point lies inside the magnetic core of the toroid. The field magnitude is:\n     $$H_\\phi = \\frac{N I}{2\\pi \\rho_B} = \\frac{1000 \\times 0.1}{2\\pi (0.1082)} = \\frac{100}{0.6798} \\approx 147.1\\text{ A/m}$$\n   - The direction is tangent to the circle ($\\hat{a}_\\phi$). In Cartesian coordinates at $(6, 9)$:\n     $$\\hat{a}_\\phi = -\\sin\\phi \\hat{a}_x + \\cos\\phi \\hat{a}_y = -\\frac{y}{\\rho} \\hat{a}_x + \\frac{x}{\\rho} \\hat{a}_y = -\\frac{9}{10.82} \\hat{a}_x + \\frac{6}{10.82} \\hat{a}_y \\approx -0.832\\hat{a}_x + 0.555\\hat{a}_y$$\n     $$\\vec{H} = 147.1 (-0.832\\hat{a}_x + 0.555\\hat{a}_y) \\approx -122.4\\hat{a}_x + 81.6\\hat{a}_y\\text{ A/m}$$",
+      "equations": [
+        {
+          "label": "Toroid Ampere Loop",
+          "latex": "H = \\frac{N I}{2\\pi \\rho} \\quad (a \\le \\rho \\le b)"
+        },
+        {
+          "label": "Unit Phi Vector",
+          "latex": "\\hat{a}_\\phi = -\\sin\\phi \\hat{a}_x + \\cos\\phi \\hat{a}_y"
+        }
+      ],
+      "visualization": {
+        "type": "plot",
+        "title": "Toroid Field vs. Radius",
+        "description": "Notice how the magnetic field exists only inside the core (from rho = 9 to 11 cm), decaying as 1/rho, and is zero outside.",
+        "config": {
+          "curves": [
+            {
+              "expr": "x >= 0.9 && x <= 1.1 ? 0.147 / x : 0",
+              "color": "#9b59b6",
+              "label": "H(ρ) [kA/m]"
+            }
+          ],
+          "xRange": [
+            0.5,
+            1.5
+          ],
+          "yRange": [
+            -0.1,
+            0.25
+          ],
+          "xLabel": "Radius ρ [x10 cm]",
+          "yLabel": "Field Intensity H"
+        }
+      }
+    },
+    {
+      "title": "Question 6: Verification of Gauss's Law for Magnetism",
+      "pdfPages": [
+        1
+      ],
+      "content": "### Problem Statement\n\nIn free space, the magnetic flux density is given by $\\vec{B} = \\hat{a}_x 2x^2 y^2 z - \\hat{a}_y 2xy^3 z + \\hat{a}_z xy^2 z^2$. \n(a) Prove that $\\vec{B}$ is a possible magnetic field.\n(b) Evaluate the flux, $\\Phi$, through a conductor's surface of $x = 1, 0 \\le y \\le 2, 0 \\le z \\le 4$.\n(c) Determine the current density, $\\vec{J}$, crossing through the surface of (b).\nThis problem is on [Page 1](pdf-page://1) of the tutorial sheet.\n\n### Analytical Solution\n\n**Part (a): Prove B is a magnetic field**\n- For a field to represent a possible magnetic field, it must satisfy Gauss's Law for Magnetism (divergence is zero):\n  $$\\nabla \\cdot \\vec{B} = 0$$\n  Calculate the divergence:\n  $$\\nabla \\cdot \\vec{B} = \\frac{\\partial B_x}{\\partial x} + \\frac{\\partial B_y}{\\partial y} + \\frac{\\partial B_z}{\\partial z} = \\frac{\\partial}{\\partial x}(2x^2 y^2 z) + \\frac{\\partial}{\\partial y}(-2xy^3 z) + \\frac{\\partial}{\\partial z}(xy^2 z^2)$$\n  $$\\nabla \\cdot \\vec{B} = 4xy^2 z - 6xy^2 z + 2xy^2 z = 0$$\n  Since the divergence is zero everywhere, $\\vec{B}$ is indeed a physically possible magnetic field.\n\n**Part (b): Evaluate the flux**\n- The surface is defined by $x=1$, so the normal unit vector is $\\hat{a}_n = +\\hat{a}_x$. The differential area is $d\\vec{S} = \\hat{a}_x dy dz$.\n  $$\\Phi = \\iint_S \\vec{B} \\cdot d\\vec{S} = \\int_0^4 \\int_0^2 B_x|_{x=1} \\, dy dz = \\int_0^4 \\int_0^2 2(1)^2 y^2 z \\, dy dz$$\n  $$\\Phi = 2 \\left( \\int_0^2 y^2 dy \\right) \\left( \\int_0^4 z dz \\right) = 2 \\left[ \\frac{y^3}{3} \\right]_0^2 \\left[ \\frac{z^2}{2} \\right]_0^4 = 2 \\left( \\frac{8}{3} \\right) (8) = \\frac{128}{3} \\approx 42.67\\text{ Wb}$$\n\n**Part (c): Determine current density J**\n- According to Maxwell's curl equation, $\\nabla \\times \\vec{H} = \\vec{J}$. Since $\\vec{B} = \\mu_0 \\vec{H}$, we have $\\vec{J} = \\frac{1}{\\mu_0} \\nabla \\times \\vec{B}$.\n  Let's calculate the curl of $\\vec{B}$:\n  $$\\nabla \\times \\vec{B} = \\left( \\frac{\\partial B_z}{\\partial y} - \\frac{\\partial B_y}{\\partial z} \\right) \\hat{a}_x + \\left( \\frac{\\partial B_x}{\\partial z} - \\frac{\\partial B_z}{\\partial x} \\right) \\hat{a}_y + \\left( \\frac{\\partial B_y}{\\partial x} - \\frac{\\partial B_x}{\\partial y} \\right) \\hat{a}_z$$\n  - $\\frac{\\partial B_z}{\\partial y} - \\frac{\\partial B_y}{\\partial z} = \\frac{\\partial}{\\partial y}(xy^2 z^2) - \\frac{\\partial}{\\partial z}(-2xy^3 z) = 2xyz^2 + 2xy^3$\n  - $\\frac{\\partial B_x}{\\partial z} - \\frac{\\partial B_z}{\\partial x} = \\frac{\\partial}{\\partial z}(2x^2 y^2 z) - \\frac{\\partial}{\\partial x}(xy^2 z^2) = 2x^2 y^2 - y^2 z^2$\n  - $\\frac{\\partial B_y}{\\partial x} - \\frac{\\partial B_x}{\\partial y} = \\frac{\\partial}{\\partial x}(-2xy^3 z) - \\frac{\\partial}{\\partial y}(2x^2 y^2 z) = -2y^3 z - 4x^2 yz$\n- The current crossing the surface $x=1$ is driven by the normal component of $\\vec{J}$ (which is $J_x$) at $x=1$:\n  $$J_x = \\frac{1}{\\mu_0} (2xyz^2 + 2xy^3)|_{x=1} = \\frac{2y(z^2 + y^2)}{\\mu_0}\\text{ A/m}^2$$",
+      "equations": [
+        {
+          "label": "Gauss's Law Check",
+          "latex": "\\nabla \\cdot \\vec{B} = 0"
+        },
+        {
+          "label": "Flux Definition",
+          "latex": "\\Phi = \\iint_S \\vec{B} \\cdot d\\vec{S}"
+        },
+        {
+          "label": "Ampere's Curl",
+          "latex": "\\vec{J} = \\frac{1}{\\mu_0} \\nabla \\times \\vec{B}"
+        }
+      ],
+      "visualization": {
+        "type": "plot",
+        "title": "Flux Value vs. Limits",
+        "description": "The flux increases linearly as we integrate over higher upper limits of the z coordinate (from 0 to 4).",
+        "config": {
+          "curves": [
+            {
+              "expr": "2.66 * x*x",
+              "color": "#2ecc71",
+              "label": "Flux Φ(z) [Wb]"
+            }
+          ],
+          "xRange": [
+            0,
+            4
+          ],
+          "yRange": [
+            0,
+            45
+          ],
+          "xLabel": "Upper limit of z [m]",
+          "yLabel": "Flux magnitude"
+        }
+      }
+    },
+    {
+      "title": "Question 7: Magnetic Vector Potential & Flux",
+      "pdfPages": [
+        2
+      ],
+      "content": "### Problem Statement\n\nA magnetic vector potential is given by $\\vec{A} = \\hat{a}_r \\frac{r^3}{3} \\cos 2\\phi\\text{ Wb/m}$. Determine the total magnetic flux, $\\Phi$, crossing the surface of $2 \\le r \\le 4, \\pi/3 \\le \\phi \\le \\pi/2, z = 3$. All distances are in meters. This problem is on [Page 2](pdf-page://2) of the tutorial sheet.\n\n### Analytical Solution\n\n1. **Identify the Coordinates and Geometry**:\n   - The vector potential $\\vec{A} = A_r \\hat{a}_r$ is given in cylindrical coordinates (where $r$ is used instead of $\\rho$). Here, $A_r = \\frac{r^3}{3} \\cos 2\\phi$, and $A_\\phi = A_z = 0$.\n   - The surface is defined by a constant $z = 3$, which is a flat disk segment perpendicular to the $z$-axis.\n   - The normal vector to this surface is $d\\vec{S} = \\hat{a}_z r dr d\\phi$.\n\n2. **Find the B Field**:\n   Using the curl in cylindrical coordinates, the $z$-component of $\\vec{B} = \\nabla \\times \\vec{A}$ is:\n   $$B_z = \\frac{1}{r} \\left( \\frac{\\partial (r A_\\phi)}{\\partial r} - \\frac{\\partial A_r}{\\partial \\phi} \\right)$$\n   Since $A_\\phi = 0$:\n   $$B_z = -\\frac{1}{r} \\frac{\\partial A_r}{\\partial \\phi} = -\\frac{1}{r} \\frac{\\partial}{\\partial \\phi} \\left( \\frac{r^3}{3} \\cos 2\\phi \\right) = -\\frac{1}{r} \\left( -\\frac{2 r^3}{3} \\sin 2\\phi \\right) = \\frac{2 r^2}{3} \\sin 2\\phi$$\n\n3. **Set up the Flux Integral**:\n   $$\\Phi = \\iint_S B_z \\, dS = \\int_{\\pi/3}^{\\pi/2} \\int_2^4 \\left( \\frac{2 r^2}{3} \\sin 2\\phi \\right) r \\, dr d\\phi$$\n   $$\\Phi = \\frac{2}{3} \\left( \\int_2^4 r^3 \\, dr \\right) \\left( \\int_{\\pi/3}^{\\pi/2} \\sin 2\\phi \\, d\\phi \\right)$$\n\n4. **Evaluate the Integrals**:\n   - Radial integral:\n     $$\\int_2^4 r^3 \\, dr = \\left[ \\frac{r^4}{4} \\right]_2^4 = \\frac{256 - 16}{4} = \\frac{240}{4} = 60$$\n   - Angular integral:\n     $$\\int_{\\pi/3}^{\\pi/2} \\sin 2\\phi \\, d\\phi = \\left[ -\\frac{\\cos 2\\phi}{2} \\right]_{\\pi/3}^{\\pi/2} = -\\frac{1}{2} (\\cos \\pi - \\cos \\frac{2\\pi}{3}) = -\\frac{1}{2} (-1 - (-0.5)) = 0.25$$\n\n5. **Compute Flux**:\n   $$\\Phi = \\frac{2}{3} \\times 60 \\times 0.25 = 40 \\times 0.25 = 10\\text{ Wb}$$\n   The total magnetic flux passing through the region is exactly $10\\text{ Wb}$.",
+      "equations": [
+        {
+          "label": "Curl in Cylindrical Z",
+          "latex": "B_z = \\frac{1}{r}\\left(\\frac{\\partial(r A_\\phi)}{\\partial r} - \\frac{\\partial A_r}{\\partial \\phi}\\right)"
+        },
+        {
+          "label": "Radial Integral",
+          "latex": "\\int_a^b r^3 dr = \\frac{b^4 - a^4}{4}"
+        },
+        {
+          "label": "Angular Integral",
+          "latex": "\\int \\sin 2\\phi d\\phi = -\\frac{1}{2}\\cos 2\\phi"
+        }
+      ],
+      "visualization": {
+        "type": "plot",
+        "title": "Flux Value vs. Radial Limit",
+        "description": "As the outer radius limit grows, the enclosed flux increases rapidly (quadratically/quartic relationship).",
+        "config": {
+          "curves": [
+            {
+              "expr": "0.0625 * (x*x*x*x - 16) * 0.25 * 0.66",
+              "color": "#3498db",
+              "label": "Flux Φ(R_max) [Wb]"
+            }
+          ],
+          "xRange": [
+            2,
+            5
+          ],
+          "yRange": [
+            0,
+            25
+          ],
+          "xLabel": "Outer radius R_max [m]",
+          "yLabel": "Flux magnitude"
+        }
+      }
+    },
+    {
+      "title": "Question 8: Force on a Semicircular Conductor",
+      "pdfPages": [
+        2
+      ],
+      "content": "### Problem Statement\n\nA semicircular conducting wire of radius $R = 2.0\\text{ m}$ carries a current $I = 3.0\\text{ A}$ in the $z=0$ plane. The wire starts at $(-2, 0, 0)$, passes through $(0, 2, 0)$, and ends at $(2, 0, 0)$. A uniform magnetic field $\\vec{B} = 0.5\\hat{a}_y\\text{ T}$ is present. Determine (a) the magnetic force $\\vec{F}_1$ on the straight section of the wire and (b) the force $\\vec{F}_2$ on the curved section. This problem is on [Page 2](pdf-page://2) of the tutorial sheet.\n\n### Analytical Solution\n\n**Part (a): Force on the straight section**\n- To form a closed circuit, a straight section must connect the start $(-2,0,0)$ and end $(2,0,0)$ along the $x$-axis.\n- The displacement vector for this straight path is $\\vec{L}_1 = 4\\hat{a}_x\\text{ m}$.\n- The current is $I = 3.0\\text{ A}$ flowing along $+x$. The uniform magnetic field is $\\vec{B} = 0.5\\hat{a}_y\\text{ T}$.\n- Using the force formula:\n  $$\\vec{F}_1 = I \\vec{L}_1 \\times \\vec{B} = 3.0 (4\\hat{a}_x) \\times (0.5\\hat{a}_y) = 6.0 (\\hat{a}_x \\times \\hat{a}_y) = 6.0\\hat{a}_z\\text{ N}$$\n\n**Part (b): Force on the curved section**\n- **Method A (Loop Shortcut)**: For any closed loop in a **uniform** magnetic field, the total magnetic force is zero:\n  $$\\vec{F}_{total} = \\vec{F}_1 + \\vec{F}_2 = 0 \\implies \\vec{F}_2 = -\\vec{F}_1 = -6.0\\hat{a}_z\\text{ N}$$\n- **Method B (Integration Proof)**: Let's verify by integrating along the semicircular arc of radius $R=2\\text{ m}$.\n  A point on the arc is defined by angle $\\phi$ from $0$ to $\\pi$. The current element is $d\\vec{l} = R d\\phi \\hat{a}_\\phi = R d\\phi (-\\sin\\phi \\hat{a}_x + \\cos\\phi \\hat{a}_y)$.\n  $$d\\vec{F}_2 = I d\\vec{l} \\times \\vec{B} = I R d\\phi (-\\sin\\phi \\hat{a}_x + \\cos\\phi \\hat{a}_y) \\times (B_0 \\hat{a}_y) = I R B_0 d\\phi (-\\sin\\phi) (\\hat{a}_x \\times \\hat{a}_y)$$\n  Since $\\hat{a}_x \\times \\hat{a}_y = \\hat{a}_z$:\n  $$d\\vec{F}_2 = -I R B_0 \\sin\\phi d\\phi \\hat{a}_z$$\n  Integrate from $\\phi=0$ to $\\pi$ (going from $(2,0,0)$ to $(-2,0,0)$):\n  $$\\vec{F}_2 = \\int_0^\\pi -I R B_0 \\sin\\phi d\\phi \\hat{a}_z = -I R B_0 \\hat{a}_z \\left[ -\\cos\\phi \\right]_0^\\pi = -I R B_0 \\hat{a}_z (1 - (-1)) = -2 I R B_0 \\hat{a}_z$$\n  Substitute the values ($I=3$, $R=2$, $B_0=0.5$):\n  $$\\vec{F}_2 = -2 (3) (2) (0.5)\\hat{a}_z = -6.0\\hat{a}_z\\text{ N}$$\n  This matches the loop shortcut perfectly!",
+      "equations": [
+        {
+          "label": "Straight Wire Force",
+          "latex": "\\vec{F}_1 = I \\vec{L}_1 \\times \\vec{B}"
+        },
+        {
+          "label": "Arc Current Element",
+          "latex": "d\\vec{l} = R d\\phi \\hat{a}_\\phi"
+        },
+        {
+          "label": "Closed Loop Condition",
+          "latex": "\\vec{F}_1 + \\vec{F}_2 = 0"
+        }
+      ],
+      "visualization": {
+        "type": "field2d",
+        "title": "Orthogonal Deflecting Force",
+        "description": "Verify the direction: current flows from left to right along the x-axis, the field points up (+z). Your right palm faces down (-y), matching our force vector.",
+        "config": {
+          "fieldType": "magnetic",
+          "lineCount": 12,
+          "sources": [
+            {
+              "x": 0.5,
+              "y": 0.5,
+              "strength": 1.0,
+              "label": "I",
+              "type": "current"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Question 9: Force and Work in a Radial Field",
+      "pdfPages": [
+        2
+      ],
+      "content": "### Problem Statement\n\nA magnetic field is defined by $\\vec{H} = \\hat{a}_\\phi 5r^2 \\cos \\phi\\text{ A/m}$. It is exposed in free space over an infinite straight wire located at $r = 3\\text{ m}$ and $\\phi = 45^\\circ$. The wire carries a current of $2.5\\text{ A}$ along $+z$.\n(a) Determine the magnetic force acting on the wire considering $-5\\text{ m} \\le z \\le 5\\text{ m}$.\n(b) Prove that the magnetic force does no work when the wire is turned once around the $z$-axis in the clockwise direction.\nThis problem is on [Page 2](pdf-page://2) of the tutorial sheet.\n\n### Analytical Solution\n\n**Part (a): Force on the wire**\n- The wire is located at $r = 3\\text{ m}$, $\\phi = 45^\\circ = \\pi/4\\text{ rad}$. The magnetic field intensity at the wire's location is:\n  $$H_\\phi = 5 (3)^2 \\cos \\frac{\\pi}{4} = 45 \\times \\frac{\\sqrt{2}}{2} \\approx 31.82\\text{ A/m}$$\n  $$\\vec{H} = 31.82 \\hat{a}_\\phi\\text{ A/m}$$\n- The magnetic flux density is:\n  $$\\vec{B} = \\mu_0 \\vec{H} = (4\\pi \\times 10^{-7}) (31.82 \\hat{a}_\\phi) \\approx 4.0 \\times 10^{-5} \\hat{a}_\\phi\\text{ T}$$\n- The current carried by the wire is $I = 2.5\\text{ A}$ along $+z$. A differential segment of wire is $d\\vec{l} = dz \\hat{a}_z$.\n- The differential force is:\n  $$d\\vec{F}_m = I d\\vec{l} \\times \\vec{B} = I dz \\hat{a}_z \\times (\\mu_0 H_\\phi \\hat{a}_\\phi) = I \\mu_0 H_\\phi dz (-\\hat{a}_r)$$\n  Integrating over length $L = 10\\text{ m}$ (from $z=-5$ to $5$):\n  $$\\vec{F}_m = -I \\mu_0 H_\\phi L \\hat{a}_r = -2.5 \\times (4\\pi \\times 10^{-7}) \\times 31.82 \\times 10 \\hat{a}_r \\approx -1.0 \\times 10^{-3} \\hat{a}_r\\text{ N} = -1.0\\hat{a}_r\\text{ mN}$$\n\n**Part (b): Prove work done is zero**\n- When the wire is rotated around the $z$-axis, its path of motion lies along the circular azimuthal direction $\\hat{a}_\\phi$. The differential displacement vector during rotation is:\n  $$d\\vec{s} = r d\\phi \\hat{a}_\\phi$$\n- The work done by the magnetic force is the integral of the force dot displacement:\n  $$W = \\int \\vec{F}_m \\cdot d\\vec{s}$$\n- Substitute the force vector (which is radial, pointing along $\\hat{a}_r$) and displacement vector (which is angular, pointing along $\\hat{a}_\\phi$):\n  $$\\vec{F}_m \\cdot d\\vec{s} \\propto (-\\hat{a}_r) \\cdot (\\hat{a}_\\phi) = 0$$\n- Since the magnetic force is perpendicular to the displacement at every point along the rotation path, the dot product is zero. Thus, the total work done is exactly **zero**:\n  $$W = 0\\text{ Joules}$$\n  *(This is a general physical principle: magnetic forces are always deflecting forces and do no work on moving conductors or charges).* See torque model description.",
+      "equations": [
+        {
+          "label": "Force Element",
+          "latex": "d\\vec{F}_m = I dz \\hat{a}_z \\times \\vec{B}"
+        },
+        {
+          "label": "Work Integral",
+          "latex": "W = \\int \\vec{F}_m \\cdot d\\vec{s}"
+        },
+        {
+          "label": "Radial-Angular Dot",
+          "latex": "\\hat{a}_r \\cdot \\hat{a}_\\phi = 0"
+        }
+      ],
+      "visualization": {
+        "type": "plot",
+        "title": "Radial Force Work",
+        "description": "Observe that the rotational force remains constant at all angles during the rotation, meaning work scales linearly with angle.",
+        "config": {
+          "curves": [
+            {
+              "expr": "cos(x)",
+              "color": "#e74c3c",
+              "label": "Force F_r(φ)"
+            },
+            {
+              "expr": "0",
+              "color": "#3498db",
+              "label": "Work done"
+            }
+          ],
+          "xRange": [
+            0,
+            6.28
+          ],
+          "yRange": [
+            -1.5,
+            1.5
+          ],
+          "xLabel": "Rotation Angle φ [rad]",
+          "yLabel": "Force / Work"
+        }
+      }
+    },
+    {
+      "title": "Question 10: Solenoid Inductance & Energy",
+      "pdfPages": [
+        2
+      ],
+      "content": "### Problem Statement\n\nA solenoid with $N = 100$ turns carries a current of $I = 5\\text{ A}$. The core is soft iron with relative permeability $\\mu_r = 5000$. The solenoid length is $l = 10\\text{ cm}$ and cross-sectional area $S = 2\\text{ cm}^2$. Determine (a) the self-inductance of the solenoid and (b) the magnetic energy stored in the solenoid. This problem is on [Page 2](pdf-page://2) of the tutorial sheet.\n\n### Analytical Solution\n\n1. **Identify the Given Parameters**:\n   - Number of turns: $N = 100$\n   - Current: $I = 5\\text{ A}$\n   - Relative permeability: $\\mu_r = 5000$\n   - Solenoid length: $l = 10\\text{ cm} = 0.1\\text{ m}$\n   - Cross-sectional area: $S = 2\\text{ cm}^2 = 2 \\times 10^{-4}\\text{ m}^2$\n\n2. **Step 1: Calculate Self-Inductance (L)**:\n   The self-inductance of a solenoid is:\n   $$L = \\frac{\\mu N^2 S}{l}$$\n   Here, $\\mu = \\mu_0 \\mu_r = (4\\pi \\times 10^{-7}) (5000) = 2\\pi \\times 10^{-3}\\,\\text{H/m}$.\n   Substitute these values:\n   $$L = \\frac{(2\\pi \\times 10^{-3}) (100)^2 (2 \\times 10^{-4})}{0.1} = \\frac{2\\pi \\times 10^{-3} \\times 10000 \\times 2 \\times 10^{-4}}{0.1}$$\n   $$L = \\frac{4\\pi \\times 10^{-3}}{0.1} = 0.04\\pi \\approx 0.126\\text{ H}$$\n   The self-inductance of the solenoid is approximately $0.126\\text{ H}$ (or $125.7\\text{ mH}$).\n\n3. **Step 2: Calculate Stored Magnetic Energy**:\n   The stored energy in an inductor is:\n   $$W_m = \\frac{1}{2} L I^2$$\n   Substitute the values ($L = 0.1257\\text{ H}$, $I = 5\\text{ A}$):\n   $$W_m = \\frac{1}{2} (0.1257) (5)^2 = 0.5 \\times 0.1257 \\times 25 = 1.57\\text{ Joules}$$\n   The stored magnetic energy is $1.57\\text{ J}$.",
+      "equations": [
+        {
+          "label": "Solenoid Inductance",
+          "latex": "L = \\frac{\\mu_0 \\mu_r N^2 S}{l}"
+        },
+        {
+          "label": "Stored Energy",
+          "latex": "W_m = \\frac{1}{2} L I^2"
+        }
+      ],
+      "visualization": {
+        "type": "plot",
+        "title": "Energy vs. Current",
+        "description": "Stored magnetic energy scales quadratically (W ~ I^2) with the current flowing through the inductor.",
+        "config": {
+          "curves": [
+            {
+              "expr": "0.0628 * x*x",
+              "color": "#2ecc71",
+              "label": "Energy W_m(I) [J]"
+            }
+          ],
+          "xRange": [
+            0,
+            6
+          ],
+          "yRange": [
+            0,
+            2.5
+          ],
+          "xLabel": "Current I [A]",
+          "yLabel": "Stored Energy [J]"
+        }
+      }
+    }
+  ],
+  "mindMap": "graph TD\n  A[\"Tutorial Solutions\"] --> B[\"Q1: Semi-Infinite Wire\"]\n  A --> C[\"Q2: Triangular Loop\"]\n  A --> D[\"Q3: Circular Loop\"]\n  A --> E[\"Q4: Parallel Sheets\"]\n  A --> F[\"Q5: Toroid Field\"]\n  A --> G[\"Q6: Gauss verification\"]\n  A --> H[\"Q7: Vector Potential flux\"]\n  A --> I[\"Q8: Semicircular Forces\"]\n  A --> J[\"Q9: Radial Force work\"]\n  A --> K[\"Q10: Solenoid Inductance\"]"
+}

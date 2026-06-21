@@ -1,0 +1,686 @@
+{
+  "documentTitle": "Chapter 3: Magnetostatics",
+  "overview": "These comprehensive study notes cover Chapter 3: Magnetostatics. Magnetostatics is the study of magnetic fields produced by steady, non-time-varying currents. We cover fundamental formulations including Oersted's discovery, Biot-Savart's Law, Ampere's Circuital Law, Maxwell's magnetostatic equations, magnetic vector potential, magnetic forces and torques, properties of magnetic materials, boundary conditions, and self/mutual inductance.",
+  "sections": [
+    {
+      "title": "Introduction to Magnetostatics & Maxwell's Equations",
+      "pdfPages": [
+        5,
+        6,
+        7,
+        73,
+        74
+      ],
+      "content": "### What is Magnetostatics?\n\nElectromagnetics is split into static and dynamic fields. Static fields occur when charges are stationary or flow at a constant rate:\n- **Electrostatic fields**: Produced by stationary electric charges. The field is conservative, and $\\nabla \\times \\vec{E} = 0$, while the charge density is the source of the divergence: $\\nabla \\cdot \\vec{D} = \\rho_v$.\n- **Magnetostatic fields**: Produced by steady, constant currents. The field is curl-active ($\\nabla \\times \\vec{H} = \\vec{J}$), but divergence-free ($\\nabla \\cdot \\vec{B} = 0$). This distinction is introduced on [Page 5](pdf-page://5).\n\nIn 1819, Danish physicist Hans Christian Oersted discovered that a compass needle deflects when placed near a current-carrying wire. This was the first empirical proof that electric currents generate magnetic fields, which form closed circular loops around the conductor (see [Page 7](pdf-page://7)).\n\n### Maxwell's Equations for Magnetostatics\n\nMagnetostatic fields in a medium are governed by two primary equations (detailed on [Page 5](pdf-page://5) and [Page 73](pdf-page://73)):\n\n1. **Gauss's Law for Magnetism (No Monopoles)**:\n   $$\\nabla \\cdot \\vec{B} = 0 \\iff \\oiint_S \\vec{B} \\cdot d\\vec{S} = 0$$\n   This states that the divergence of the magnetic flux density is zero. Physically, it means there are **no magnetic monopoles**. You can never isolate a North pole or a South pole; cutting a magnet in half simply creates two smaller magnets, each with its own North and South poles. Consequently, magnetic field lines always form continuous, closed loops.\n\n2. **Ampere's Circuital Law (Curl of H)**:\n   $$\\nabla \\times \\vec{H} = \\vec{J} \\iff \\oint_C \\vec{H} \\cdot d\\vec{l} = I_{enc}$$\n   This states that the curl of the magnetic field intensity $\\vec{H}$ is equal to the steady current density $\\vec{J}$. The relationship between the magnetic flux density $\\vec{B}$ and the magnetic field intensity $\\vec{H}$ is governed by the permeability of the medium $\\mu$:\n   $$\\vec{B} = \\mu \\vec{H}$$\n   In free space, $\\mu_0 = 4\\pi \\times 10^{-7}\\,\\text{H/m}$ (see [Page 5](pdf-page://5)).\n\n### Why do we need a Visualization here?\n\nConcentric circles of magnetic fields around a wire are hard to draw clearly on paper without perspective distortion. Our interactive 2D field visualizer represents Oersted's wire with current flowing out of the screen (⊙). You can see the circular field lines wrapping around it. You can interact with the current strength to see how it affects the density of the field lines.",
+      "equations": [
+        {
+          "label": "Gauss's Law for Magnetism",
+          "latex": "\\nabla \\cdot \\vec{B} = 0"
+        },
+        {
+          "label": "Ampere's Curl Equation",
+          "latex": "\\nabla \\times \\vec{H} = \\vec{J}"
+        },
+        {
+          "label": "Constitutive Relation",
+          "latex": "\\vec{B} = \\mu \\vec{H}"
+        }
+      ],
+      "visualization": {
+        "type": "field2d",
+        "title": "Magnetic Field lines (Oersted's Wire)",
+        "description": "Notice how the magnetic field lines form concentric closed loops around the wire carrying current out of the page (⊙ source).",
+        "config": {
+          "fieldType": "magnetic",
+          "lineCount": 16,
+          "sources": [
+            {
+              "x": 0.5,
+              "y": 0.5,
+              "strength": 2.0,
+              "label": "I",
+              "type": "current"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Biot-Savart's Law: Fundamentals and Derivations",
+      "pdfPages": [
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23
+      ],
+      "content": "### The Fundamental Law of Magnetic Fields\n\nBiot-Savart's Law relates a steady current to the magnetic field intensity $\\vec{H}$ it generates. It is the magnetic equivalent of Coulomb's Law in electrostatics, named after French physicists Jean-Baptiste Biot and Félix Savart (see [Page 8](pdf-page://8)).\n\nFor a differential current element $I d\\vec{l}$, the differential field $d\\vec{H}$ at a distance vector $\\vec{R}$ is:\n\n$$d\\vec{H} = \\frac{I d\\vec{l} \\times \\hat{a}_R}{4\\pi R^2} = \\frac{I d\\vec{l} \\times \\vec{R}}{4\\pi R^3}$$\n\nHere, $\\hat{a}_R$ is the unit vector pointing from the current element to the field point, and $R$ is the distance between them. The cross product ($d\\vec{l} \\times \\vec{R}$) indicates that the magnetic field is always **orthogonal** to the plane containing the current direction and the distance vector (see [Page 8](pdf-page://8)).\n\n### Step-by-Step Procedure to Solve Biot-Savart Problems\n\nTo calculate the magnetic field from a current distribution, follow this structured procedure (from [Page 11](pdf-page://11)):\n1. **Choose a Coordinate System**: Select Cartesian, cylindrical, or spherical coordinates based on the symmetry of the conductor.\n2. **Identify the Current Element**: Write the differential length vector $d\\vec{l}$ in the direction of the current flow.\n3. **Determine the Vectors**: Identify the source point (on the conductor) and the field point (where we measure the field). Write the distance vector $\\vec{R}$ pointing from the source point to the field point, and compute its magnitude $R$.\n4. **Compute the Cross Product**: Calculate $d\\vec{l} \\times \\vec{R}$ to determine the direction of the field.\n5. **Integrate**: Substitute these expressions into the Biot-Savart equation and integrate over the geometry of the conductor, using appropriate limits.\n\n### Derivations for Common Wire Geometries\n\n1. **Infinitely Long Straight Wire**: For a wire carrying current $I$ along the $z$-axis, integrating from $z=-\\infty$ to $z=+\\infty$ yields (see [Page 12](pdf-page://12)):\n   $$\\vec{B} = \\frac{\\mu_0 I}{2\\pi \\rho} \\hat{a}_\\phi$$\n2. **Finite Length Straight Wire**: For a wire segment along the $z$-axis where current flows from angle $\\alpha_1$ to $\\alpha_2$ relative to the field point (see [Page 15](pdf-page://15)):\n   $$\\vec{H} = \\frac{I}{4\\pi \\rho} (\\cos \\alpha_2 - \\cos \\alpha_1) \\hat{a}_\\phi$$\n3. **On the Axis of a Circular Loop**: For a loop of radius $a$ carrying current $I$ in the $z=0$ plane, the field at $P(0,0,z)$ is (see [Page 19](pdf-page://19)):\n   $$\\vec{H} = \\frac{I a^2}{2(a^2 + z^2)^{3/2}} \\hat{a}_z$$\n   At the center of the loop ($z=0$):\n   $$\\vec{H} = \\frac{I}{2a} \\hat{a}_z$$\n\n### Distributed Currents\n\nFor surface currents with density $\\vec{K}_s$ (A/m) or volume currents with density $\\vec{J}$ (A/m$^2$), we use the equivalencies $I d\\vec{l} \\leftrightarrow \\vec{K}_s dS \\leftrightarrow \\vec{J} d\\nu$ to write (see [Page 12](pdf-page://12)):\n\n$$\\vec{H} = \\frac{1}{4\\pi} \\iint_S \\frac{\\vec{K}_s \\times \\hat{a}_R}{R^2} dS = \\frac{1}{4\\pi} \\iiint_V \\frac{\\vec{J} \\times \\hat{a}_R}{R^2} d\\nu$$",
+      "equations": [
+        {
+          "label": "Biot-Savart Law",
+          "latex": "d\\vec{H} = \\frac{I d\\vec{l} \\times \\vec{R}}{4\\pi R^3}"
+        },
+        {
+          "label": "Infinite Straight Wire",
+          "latex": "B = \\frac{\\mu_0 I}{2\\pi \\rho}"
+        },
+        {
+          "label": "On-Axis Circular Loop",
+          "latex": "H = \\frac{I a^2}{2(a^2 + z^2)^{3/2}}"
+        }
+      ],
+      "visualization": {
+        "type": "plot",
+        "title": "Magnetic Field vs. Distance",
+        "description": "Graph showing how the magnetic flux density B decays as a function of distance ρ away from an infinite wire (1/x, red curve) and a finite wire (blue curve).",
+        "config": {
+          "curves": [
+            {
+              "expr": "1 / x",
+              "color": "#e74c3c",
+              "label": "Infinite Wire (B ~ 1/ρ)"
+            },
+            {
+              "expr": "1 / sqrt(x*x + 1)",
+              "color": "#3498db",
+              "label": "Finite Wire of length 1"
+            }
+          ],
+          "xRange": [
+            0.5,
+            5
+          ],
+          "yRange": [
+            0,
+            2.5
+          ],
+          "xLabel": "Distance ρ [m]",
+          "yLabel": "Relative B-Field"
+        }
+      }
+    },
+    {
+      "title": "Ampere's Circuital Law: Concept & Symmetric Fields",
+      "pdfPages": [
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39
+      ],
+      "content": "### What is Ampere's Circuital Law?\n\nAmpere's Circuital Law states that the line integral of the magnetic field intensity $\\vec{H}$ around any closed path (called an **Amperian loop**) is equal to the net steady current enclosed by that path (see [Page 28](pdf-page://28)):\n\n$$\\oint_C \\vec{H} \\cdot d\\vec{l} = I_{enc}$$\n\nThis law is the magnetic equivalent of Gauss's Law in electrostatics. While Biot-Savart's Law can calculate fields for any geometry, Ampere's Law allows us to solve the field in seconds if the system has **high symmetry** (e.g., infinite lines, cylinders, sheets, toroids, or solenoids).\n\n### Symmetry Conditions for Amperian Loops\n\nTo use Ampere's Law to find $\\vec{H}$, we must choose a loop $C$ where (see [Page 29](pdf-page://29)):\n1. $\\vec{H}$ is either tangent (parallel) or normal (perpendicular) to the path at every point.\n2. Wherever $\\vec{H}$ is tangent, its magnitude $H$ is constant along that segment.\n\nUnder these conditions, the integral simplifies: $\\oint_C \\vec{H} \\cdot d\\vec{l} = H \\int d\\vec{l} = H \\cdot L = I_{enc}$, where $L$ is the length of the tangent segment.\n\n### Coaxial Cable (Solid Cylinder Field)\n\nConsider a solid conductor of radius $a$ carrying a steady current $I$ along the $+z$ direction (see [Page 35](pdf-page://35)). Choosing a circular Amperian loop of radius $\\rho$ centered on the axis, we find:\n- **Outside the conductor** ($\\rho > a$): The loop encloses the entire current $I_{enc} = I$:\n  $$H \\cdot 2\\pi \\rho = I \\implies \\vec{H} = \\frac{I}{2\\pi \\rho} \\hat{a}_\\phi$$\n- **Inside the conductor** ($\\rho \\le a$): Assuming the current is uniformly distributed, the loop encloses only a fraction of the current: $I_{enc} = I \\frac{\\pi \\rho^2}{\\pi a^2} = I \\frac{\\rho^2}{a^2}$:\n  $$H \\cdot 2\\pi \\rho = I \\frac{\\rho^2}{a^2} \\implies \\vec{H} = \\frac{I \\rho}{2\\pi a^2} \\hat{a}_\\phi$$\nThis shows that the magnetic field grows linearly inside the wire, peaks at the surface, and decays as $1/\\rho$ outside (detailed on [Page 35](pdf-page://35) and [Page 36](pdf-page://36)).\n\n### Infinite Current Sheet\n\nFor an infinite current sheet in the $z=0$ plane carrying uniform surface current density $\\vec{K} = K_y \\hat{a}_y$ (A/m), choosing a rectangular Amperian loop perpendicular to the sheet yields a uniform magnetic field parallel to the sheet (see [Page 33](pdf-page://33) and [Page 34](pdf-page://34)):\n\n$$\\vec{H} = \\frac{1}{2} \\vec{K} \\times \\hat{a}_n$$\n\nwhere $\\hat{a}_n$ is the unit normal vector pointing away from the sheet.\n\n### Toroids and Solenoids\n\n- **Toroid**: A toroidal coil of $N$ turns carrying current $I$ with inner radius $a$ and outer radius $b$. Inside the core ($a < \\rho < b$), the enclosed current is $NI$:\n  $$H \\cdot 2\\pi \\rho = N I \\implies H = \\frac{N I}{2\\pi \\rho}$$\n  Outside the toroid ($\\rho < a$ or $\\rho > b$), the field is zero because the net enclosed current is zero (see [Page 37](pdf-page://37) and [Page 38](pdf-page://38)).\n- **Solenoid**: A long solenoid of length $l$ and $N$ turns carries current $I$. The field inside is uniform and directed along the axis:\n  $$H = \\frac{N I}{l} = n I \\implies B = \\mu n I$$\n  where $n = N/l$ is the turn density (see [Page 87](pdf-page://87)).",
+      "equations": [
+        {
+          "label": "Ampere's Circuital Law",
+          "latex": "\\oint_C \\vec{H} \\cdot d\\vec{l} = I_{enc}"
+        },
+        {
+          "label": "Current Sheet Field",
+          "latex": "\\vec{H} = \\frac{1}{2} \\vec{K} \\times \\hat{a}_n"
+        },
+        {
+          "label": "Solenoid Field",
+          "latex": "B = \\mu \\frac{N}{l} I"
+        }
+      ],
+      "visualization": {
+        "type": "field2d",
+        "title": "Opposing Line Currents (Parallel Wires)",
+        "description": "Drag the two wire sources carrying current in opposite directions to see how their magnetic fields interact and reinforce in between them.",
+        "config": {
+          "fieldType": "magnetic",
+          "lineCount": 12,
+          "sources": [
+            {
+              "x": 0.35,
+              "y": 0.5,
+              "strength": 1.5,
+              "label": "⊙",
+              "type": "current"
+            },
+            {
+              "x": 0.65,
+              "y": 0.5,
+              "strength": -1.5,
+              "label": "⊗",
+              "type": "current"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Magnetic Forces on Charged Particles & Conductors",
+      "pdfPages": [
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63
+      ],
+      "content": "### Magnetic Force on a Moving Charge\n\nWhile a static electric field exerts a force on any charge regardless of its motion ($\\vec{F}_e = q\\vec{E}$), a magnetic field only exerts a force on a charge that is **moving**. The force $\\vec{F}_m$ experienced by a charge $q$ moving with velocity $\\vec{u}$ in a magnetic field $\\vec{B}$ is given by (see [Page 52](pdf-page://52)):\n\n$$\\vec{F}_m = q (\\vec{u} \\times \\vec{B})$$\n\nKey features of this force include (referenced on [Page 53](pdf-page://53)):\n1. **Direction**: The cross product dictates that the force is always perpendicular to both the velocity vector $\\vec{u}$ and the magnetic field vector $\\vec{B}$.\n2. **No Work Done**: Since the force is always perpendicular to the direction of motion ($\\vec{F}_m \\cdot d\\vec{s} = 0$), the magnetic field **does no work** on the charge. It cannot change the kinetic energy or speed of the particle; it can only bend its trajectory.\n3. **Lorentz Force**: If both electric and magnetic fields are present, the total force is the vector sum of both (see [Page 54](pdf-page://54)):\n   $$\\vec{F} = q(\\vec{E} + \\vec{u} \\times \\vec{B})$$\n\n### Magnetic Force on a Current-Carrying Conductor\n\nAn electric current is a flow of moving charges. When a wire carrying current $I$ is placed in an external magnetic field $\\vec{B}$, the magnetic forces acting on the individual moving charges add up to produce a net macroscopic force on the wire. This is explained on [Page 55](pdf-page://55).\n\nFor a straight wire segment of length vector $\\vec{L}$ (pointing in the direction of the current flow) in a uniform magnetic field $\\vec{B}$, the force is:\n\n$$\\vec{F}_m = I \\vec{L} \\times \\vec{B}$$\n\nIf the wire is curved or the magnetic field is non-uniform, we integrate the force acting on each differential element $d\\vec{l}$ (see [Page 57](pdf-page://57) and [Page 59](pdf-page://59)):\n\n$$\\vec{F}_m = \\int_C I d\\vec{l} \\times \\vec{B}$$\n\n### Force Between Two Parallel Conductors\n\nEvery current-carrying wire generates its own magnetic field. When two parallel wires carrying currents $I_1$ and $I_2$ are placed near each other, each wire experiences a force due to the magnetic field generated by the other (see [Page 62](pdf-page://62)):\n- **Attractive Force**: If the currents flow in the **same direction**, the wires attract each other.\n- **Repulsive Force**: If the currents flow in **opposite directions**, the wires repel each other.\n\nThis behavior is shown on [Page 63](pdf-page://63). The force per unit length $F/L$ between two infinite parallel wires separated by distance $d$ is:\n\n$$\\frac{F_m}{L} = \\frac{\\mu_0 I_1 I_2}{2\\pi d}$$",
+      "equations": [
+        {
+          "label": "Lorentz Force",
+          "latex": "\\vec{F} = q(\\vec{E} + \\vec{u} \\times \\vec{B})"
+        },
+        {
+          "label": "Force on Wire",
+          "latex": "\\vec{F}_m = I \\vec{L} \\times \\vec{B}"
+        },
+        {
+          "label": "Force Between Wires",
+          "latex": "\\frac{F_m}{L} = \\frac{\\mu_0 I_1 I_2}{2\\pi d}"
+        }
+      ],
+      "visualization": {
+        "type": "field2d",
+        "title": "Opposing Line Currents (Parallel Wires)",
+        "description": "Drag the two wire sources carrying current in opposite directions to see how their magnetic fields interact and reinforce in between them.",
+        "config": {
+          "fieldType": "magnetic",
+          "lineCount": 12,
+          "sources": [
+            {
+              "x": 0.35,
+              "y": 0.5,
+              "strength": 1.5,
+              "label": "⊙",
+              "type": "current"
+            },
+            {
+              "x": 0.65,
+              "y": 0.5,
+              "strength": -1.5,
+              "label": "⊗",
+              "type": "current"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Torque, Dipole Moments, and Loop Rotations",
+      "pdfPages": [
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70
+      ],
+      "content": "### Magnetic Torque on a Loop\n\nWhen a current-carrying loop is placed in an external magnetic field, the net force acting on the loop is zero because the forces on opposite sides cancel out. However, if the field is not parallel to the loop's surface normal, these opposing forces create a turning force, or **torque**, that acts to rotate the loop around its pivot axis. This is the operating principle behind electric motors. This is explained on [Page 64](pdf-page://64) and [Page 65](pdf-page://65).\n\nConsider a rectangular loop of dimensions $w$ and $h$ carrying current $I$ in a uniform field $\\vec{B}$. The forces acting on the arms create a torque $\\vec{T}$ (see [Page 68](pdf-page://68)):\n\n$$\\vec{T} = \\vec{m} \\times \\vec{B}$$\n\nwhere $\\vec{m}$ is the **magnetic dipole moment** of the loop, defined as (see [Page 70](pdf-page://70)):\n\n$$\\vec{m} = N I A \\hat{a}_n$$\n\nHere, $N$ is the number of turns, $I$ is the current, $A$ is the area of the loop, and $\\hat{a}_n$ is the unit normal vector perpendicular to the plane of the loop (determined by curling the fingers of your right hand in the direction of the current; your thumb points in the direction of $\\hat{a}_n$).\n\n### The Torque Formula for Loops\n\nIf the loop normal $\\hat{a}_n$ makes an angle $\\theta$ with the magnetic field direction, the magnitude of the torque is:\n\n$$T = N I A B \\sin\\theta$$\n\nThe torque acts to rotate the loop to align its magnetic dipole moment $\\vec{m}$ with the external magnetic field $\\vec{B}$ (minimizing the potential energy of the system). This is detailed on [Page 69](pdf-page://69).\n\n### Why do we need a Visualization here?\n\nVisualizing how a charged particle moves in a magnetic field is difficult because the force is always perpendicular to the velocity, causing the particle to orbit. In our 3D visualization, you can see the helical path of a charged particle in a magnetic field. Rotating the view in 3D makes it clear how the parallel velocity component is unaffected by the magnetic field, while the perpendicular component drives the circular orbit, forming a spiral helix.",
+      "equations": [
+        {
+          "label": "Magnetic Dipole Moment",
+          "latex": "\\vec{m} = N I A \\hat{a}_n"
+        },
+        {
+          "label": "Magnetic Torque",
+          "latex": "\\vec{T} = \\vec{m} \\times \\vec{B}"
+        },
+        {
+          "label": "Torque Magnitude",
+          "latex": "T = N I A B \\sin\\theta"
+        }
+      ],
+      "visualization": {
+        "type": "3d",
+        "title": "Helical Path of a Charged Particle",
+        "description": "Orbit and zoom in 3D. A charged particle moving with a velocity component parallel to a magnetic field traces out a helical trajectory.",
+        "config": {
+          "background": "#0f172a",
+          "showGrid": true,
+          "camera": {
+            "position": [
+              5,
+              6,
+              12
+            ]
+          },
+          "objects": [
+            {
+              "type": "sphere",
+              "position": [
+                0,
+                0,
+                4
+              ],
+              "color": "#e74c3c",
+              "radius": 0.25,
+              "animate": {
+                "rotate": {
+                  "y": 0.05
+                }
+              }
+            }
+          ],
+          "lines": [
+            {
+              "points": [
+                [
+                  0,
+                  -4,
+                  0
+                ],
+                [
+                  0,
+                  4,
+                  0
+                ]
+              ],
+              "color": "#3b82f6"
+            },
+            {
+              "points": [
+                [
+                  0.0,
+                  -4.0,
+                  0.0
+                ],
+                [
+                  1.0,
+                  -3.8,
+                  0.3
+                ],
+                [
+                  1.4,
+                  -3.6,
+                  0.8
+                ],
+                [
+                  1.5,
+                  -3.4,
+                  1.4
+                ],
+                [
+                  1.2,
+                  -3.2,
+                  1.9
+                ],
+                [
+                  0.6,
+                  -3.0,
+                  2.2
+                ],
+                [
+                  -0.1,
+                  -2.8,
+                  2.2
+                ],
+                [
+                  -0.8,
+                  -2.6,
+                  1.9
+                ],
+                [
+                  -1.3,
+                  -2.4,
+                  1.4
+                ],
+                [
+                  -1.5,
+                  -2.2,
+                  0.8
+                ],
+                [
+                  -1.3,
+                  -2.0,
+                  0.2
+                ],
+                [
+                  -0.8,
+                  -1.8,
+                  -0.3
+                ],
+                [
+                  -0.1,
+                  -1.6,
+                  -0.5
+                ],
+                [
+                  0.6,
+                  -1.4,
+                  -0.5
+                ],
+                [
+                  1.2,
+                  -1.2,
+                  -0.2
+                ],
+                [
+                  1.5,
+                  -1.0,
+                  0.3
+                ],
+                [
+                  1.4,
+                  -0.8,
+                  0.9
+                ],
+                [
+                  1.0,
+                  -0.6,
+                  1.4
+                ],
+                [
+                  0.3,
+                  -0.4,
+                  1.8
+                ],
+                [
+                  -0.4,
+                  -0.2,
+                  1.9
+                ],
+                [
+                  -1.0,
+                  0.0,
+                  1.7
+                ],
+                [
+                  -1.4,
+                  0.2,
+                  1.2
+                ],
+                [
+                  -1.5,
+                  0.4,
+                  0.6
+                ],
+                [
+                  -1.2,
+                  0.6,
+                  0.0
+                ],
+                [
+                  -0.7,
+                  0.8,
+                  -0.4
+                ],
+                [
+                  0.0,
+                  1.0,
+                  -0.6
+                ],
+                [
+                  0.7,
+                  1.2,
+                  -0.5
+                ],
+                [
+                  1.2,
+                  1.4,
+                  -0.1
+                ],
+                [
+                  1.5,
+                  1.6,
+                  0.4
+                ],
+                [
+                  1.4,
+                  1.8,
+                  1.0
+                ],
+                [
+                  0.9,
+                  2.0,
+                  1.5
+                ],
+                [
+                  0.2,
+                  2.2,
+                  1.8
+                ],
+                [
+                  -0.5,
+                  2.4,
+                  1.8
+                ],
+                [
+                  -1.1,
+                  2.6,
+                  1.6
+                ],
+                [
+                  -1.4,
+                  2.8,
+                  1.1
+                ],
+                [
+                  -1.5,
+                  3.0,
+                  0.5
+                ],
+                [
+                  -1.2,
+                  3.2,
+                  -0.1
+                ],
+                [
+                  -0.6,
+                  3.4,
+                  -0.5
+                ],
+                [
+                  0.1,
+                  3.6,
+                  -0.6
+                ],
+                [
+                  0.8,
+                  3.8,
+                  -0.4
+                ],
+                [
+                  1.3,
+                  4.0,
+                  0.1
+                ]
+              ],
+              "color": "#ef4444"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Magnetic Vector Potential & Flux",
+      "pdfPages": [
+        41,
+        44,
+        45,
+        46,
+        47,
+        48
+      ],
+      "content": "### Mathematical Formulation\n\nIn electrostatics, the conservative nature of the electric field ($\\nabla \\times \\vec{E} = 0$) allows us to define a scalar potential $V$ such that $\\vec{E} = -\\nabla V$. In magnetostatics, the divergence of the magnetic field is always zero ($\\nabla \\cdot \\vec{B} = 0$). Since the divergence of the curl of any vector field is mathematically zero ($\\nabla \\cdot (\\nabla \\times \\vec{A}) = 0$), we can define a **magnetic vector potential** $\\vec{A}$ (in Wb/m) such that (see [Page 44](pdf-page://44)):\n\n$$\\vec{B} = \\nabla \\times \\vec{A}$$\n\nUnlike the electric scalar potential $V$, which is simple to visualize physically as voltage, the vector potential $\\vec{A}$ is more abstract. However, it points in the same direction as the current density $\\vec{J}$ that generates it. The vector Poisson's equation relates the potential to the source currents:\n\n$$\\nabla^2 \\vec{A} = -\\mu \\vec{J}$$\n\nThis is derived on [Page 45](pdf-page://45).\n\n### Calculating Magnetic Flux using Vector Potential\n\nOne of the most useful applications of the vector potential is calculating magnetic flux. Instead of integrating the magnetic flux density $\\vec{B}$ over a surface area $S$, we can use Stoke's Theorem to convert it into a line integral of the vector potential $\\vec{A}$ along the closed loop boundary $C$ of that surface (see [Page 47](pdf-page://47)):\n\n$$\\Phi = \\iint_S \\vec{B} \\cdot d\\vec{S} = \\iint_S (\\nabla \\times \\vec{A}) \\cdot d\\vec{S} = \\oint_C \\vec{A} \\cdot d\\vec{l}$$\n\nThis makes flux calculations much simpler for complex loop shapes. An example of this integration is shown on [Page 48](pdf-page://48).",
+      "equations": [
+        {
+          "label": "Vector Potential Definition",
+          "latex": "\\vec{B} = \\nabla \\times \\vec{A}"
+        },
+        {
+          "label": "Vector Poisson Equation",
+          "latex": "\\nabla^2 \\vec{A} = -\\mu \\vec{J}"
+        },
+        {
+          "label": "Flux Line Integral",
+          "latex": "\\Phi = \\oint_C \\vec{A} \\cdot d\\vec{l}"
+        }
+      ],
+      "visualization": {
+        "type": "plot",
+        "title": "Field Direction vs. Surface Normal",
+        "description": "When the magnetic field vectors lie parallel to the surface (blue grid), they do not cross it. Hence, the flux is zero.",
+        "config": {
+          "curves": [
+            {
+              "expr": "0",
+              "color": "#3b82f6",
+              "label": "Flux component B_z"
+            }
+          ],
+          "xRange": [
+            -2,
+            2
+          ],
+          "yRange": [
+            -1,
+            1
+          ],
+          "xLabel": "Coordinate",
+          "yLabel": "B_z Magnitude"
+        }
+      }
+    },
+    {
+      "title": "Magnetic Materials, Hysteresis, & Boundary Conditions",
+      "pdfPages": [
+        71,
+        72,
+        74,
+        75,
+        76,
+        77,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85
+      ],
+      "content": "### How Materials Respond to Magnetic Fields\n\nMaterials respond differently to magnetic fields based on the spin and orbital motion of their electrons. In bulk material, we define the **Magnetization Vector** $\\vec{M}$ (A/m) as the magnetic dipole moment per unit volume. The total magnetic flux density is (see [Page 71](pdf-page://71) and [Page 73](pdf-page://73)):\n\n$$\\vec{B} = \\mu_0 (\\vec{H} + \\vec{M}) = \\mu_0 (1 + \\chi_m)\\vec{H} = \\mu_0 \\mu_r \\vec{H}$$\n\nwhere $\\chi_m$ is the magnetic susceptibility and $\\mu_r = 1 + \\chi_m$ is the relative permeability.\n- **Diamagnetic**: $\\mu_r < 1$ (e.g., copper, bismuth, water). These materials weakly oppose the applied field.\n- **Paramagnetic**: $\\mu_r > 1$ (e.g., aluminum, platinum). These materials weakly align with the applied field.\n- **Ferromagnetic**: $\\mu_r \\gg 1$ (e.g., iron, cobalt, nickel). Atoms form aligned regions called **magnetic domains** (see [Page 71](pdf-page://71) and [Page 72](pdf-page://72)). They align strongly with the field and retain magnetization, creating permanent magnets.\n\n### The B-H Hysteresis Loop\n\nFerromagnetic materials exhibit a lag in magnetization known as **hysteresis**. As the applied field $H$ increases, domains align until the material reaches saturation. When $H$ is reduced to zero, the material retains some magnetization, called the **remanence** ($B_r$). To reduce the magnetization back to zero, an opposing field must be applied, known as the **coercivity** ($H_c$). This forms a closed loop, shown on [Page 75](pdf-page://75). The area enclosed by the loop represents the energy lost as heat during each magnetization cycle (magnetic core loss).\n\n### Magnetic Boundary Conditions\n\nWhen a magnetic field passes from one medium to another (e.g., with permeabilities $\\mu_1$ and $\\mu_2$), it must satisfy boundary conditions derived from Maxwell's equations (see [Page 80](pdf-page://80)):\n\n1. **Normal Components**: Since $\\nabla \\cdot \\vec{B} = 0$, the normal component of $\\vec{B}$ is continuous across the interface:\n   $$B_{1n} = B_{2n} \\implies \\mu_1 H_{1n} = \\mu_2 H_{2n}$$\n2. **Tangential Components**: Since $\\nabla \\times \\vec{H} = \\vec{J}$, the tangential component of $\\vec{H}$ is discontinuous by the surface current density $K_s$:\n   $$H_{1t} - H_{2t} = K_s \\iff \\hat{a}_{n2} \\times (\\vec{H}_1 - \\vec{H}_2) = \\vec{K}_s$$\n   If the conductivities are finite, there can be no perfect surface sheet current ($K_s = 0$), so the tangential component is continuous (see [Page 83](pdf-page://83) and [Page 85](pdf-page://85)):\n   $$H_{1t} = H_{2t} \\implies \\frac{B_{1t}}{\\mu_1} = \\frac{B_{2t}}{\\mu_2}$$",
+      "equations": [
+        {
+          "label": "Magnetization Relation",
+          "latex": "\\vec{B} = \\mu_0(\\vec{H} + \\vec{M})"
+        },
+        {
+          "label": "Normal Boundary Condition",
+          "latex": "B_{1n} = B_{2n}"
+        },
+        {
+          "label": "Tangential Boundary Condition",
+          "latex": "\\hat{a}_{n2} \\times (\\vec{H}_1 - \\vec{H}_2) = \\vec{K}_s"
+        }
+      ],
+      "visualization": {
+        "type": "plot",
+        "title": "Magnetic Hysteresis (B-H Loop)",
+        "description": "Visualizing magnetization lag in ferromagnetic materials. The loop area represents energy dissipated as heat during one full cycle.",
+        "config": {
+          "curves": [
+            {
+              "expr": "1.5 * (2 / (1 + exp(-2*x)) - 1) + 0.15*sin(x)",
+              "color": "#8e44ad",
+              "label": "B vs H (Ascending)"
+            },
+            {
+              "expr": "1.5 * (2 / (1 + exp(-2*x)) - 1) - 0.15*sin(x)",
+              "color": "#c0392b",
+              "label": "B vs H (Descending)"
+            }
+          ],
+          "xRange": [
+            -3,
+            3
+          ],
+          "yRange": [
+            -1.8,
+            1.8
+          ],
+          "xLabel": "H (Applied Field)",
+          "yLabel": "B (Induced Magnetization)"
+        }
+      }
+    },
+    {
+      "title": "Inductance, Solenoids, & Magnetic Energy",
+      "pdfPages": [
+        86,
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96
+      ],
+      "content": "### Concept of Inductance\n\nAn inductor is the magnetic analogue of an electrical capacitor. While a capacitor stores energy in its electric field, an inductor stores energy in its magnetic field (see [Page 86](pdf-page://86)). We define the **Self-Inductance** $L$ as the ratio of total magnetic flux linkage $\\Lambda = N\\Phi$ to the current $I$ flowing through the conductor:\n\n$$L = \\frac{\\Lambda}{I} = \\frac{N\\Phi}{I}$$\n\nFor a solenoid of length $l$, cross-sectional area $S$, and $N$ turns (see [Page 87](pdf-page://87) and [Page 88](pdf-page://88)):\n\n$$B = \\mu \\frac{N}{l} I \\implies \\Phi = B S = \\mu \\frac{N S}{l} I$$\n\n$$\\Lambda = N \\Phi = \\frac{\\mu N^2 S}{l} I \\implies L_{solenoid} = \\frac{\\mu N^2 S}{l}$$\n\nThis shows that inductance is determined entirely by the **physical geometry** of the inductor and the magnetic permeability of the core material. An example of self-inductance calculation is shown on [Page 90](pdf-page://90).\n\n### Mutual Inductance & Coupling\n\nWhen two loops are placed near each other, the magnetic field lines generated by current $I_1$ in Loop 1 pass through the area of Loop 2, creating a flux linkage. The **Mutual Inductance** $M_{12}$ is defined as (see [Page 91](pdf-page://91)):\n\n$$M_{12} = \\frac{\\Lambda_{12}}{I_1} = \\frac{N_2 \\Phi_{12}}{I_1}$$\n\nThe coupling efficiency is measured by the **coupling coefficient** $k$ (see [Page 92](pdf-page://92)):\n\n$$k = \\frac{M}{\\sqrt{L_1 L_2}}, \\quad 0 \\le k \\le 1$$\n\n### Stored Magnetic Energy\n\nEstablishing a current in an inductor requires work, which is stored as potential energy in the magnetic field. The stored magnetic energy is (see [Page 93](pdf-page://93)):\n\n$$W_m = \\frac{1}{2} L I^2$$\n\nIn terms of field quantities, the magnetic energy stored in a volume $\\nu$ is (see [Page 94](pdf-page://94)):\n\n$$W_m = \\frac{1}{2} \\iiint_{\\nu} \\vec{B} \\cdot \\vec{H} d\\nu = \\frac{1}{2} \\iiint_{\\nu} \\mu H^2 d\\nu$$\n\nThe **Magnetic Energy Density** $w_m$ is:\n\n$$w_m = \\frac{1}{2} \\mu H^2 = \\frac{B^2}{2\\mu}$$",
+      "equations": [
+        {
+          "label": "Inductance Definition",
+          "latex": "L = \\frac{N\\Phi}{I}"
+        },
+        {
+          "label": "Solenoid Inductance",
+          "latex": "L = \\frac{\\mu N^2 S}{l}"
+        },
+        {
+          "label": "Stored Energy",
+          "latex": "W_m = \\frac{1}{2} L I^2"
+        },
+        {
+          "label": "Energy Density",
+          "latex": "w_m = \\frac{1}{2} \\mu H^2"
+        }
+      ],
+      "visualization": {
+        "type": "plot",
+        "title": "RL Circuit Current Buildup",
+        "description": "Visualizing how inductance opposes change, causing the current I(t) to rise exponentially to its steady-state value in an RL circuit.",
+        "config": {
+          "curves": [
+            {
+              "expr": "1 - exp(-x)",
+              "color": "#2ecc71",
+              "label": "Current I(t) = I_0(1 - e^{-Rt/L})"
+            }
+          ],
+          "xRange": [
+            0,
+            5
+          ],
+          "yRange": [
+            0,
+            1.2
+          ],
+          "xLabel": "Normalized Time t / (L/R)",
+          "yLabel": "Current I / I_0"
+        }
+      }
+    }
+  ],
+  "mindMap": "graph TD\n  A[\"Magnetostatics\"] --> B[\"Maxwell's Equations\"]\n  A --> C[\"Biot-Savart's Law\"]\n  A --> D[\"Ampere's Circuital Law\"]\n  B --> E[\"Gauss's Law for Magnetism\"]\n  C --> F[\"Line Current\"]\n  C --> G[\"Circular Loop\"]\n  D --> H[\"Infinite Sheet\"]\n  D --> I[\"Toroid/Solenoid\"]\n  A --> J[\"Magnetic Potential & Forces\"]\n  J --> K[\"Vector Potential A\"]\n  J --> L[\"Lorentz Force\"]\n  J --> M[\"Dipole Torque\"]\n  A --> N[\"Materials & Boundaries\"]\n  N --> O[\"Hysteresis Loop\"]\n  N --> P[\"Boundary Conditions\"]\n  A --> Q[\"Inductance & Energy\"]\n  Q --> R[\"Self Inductance L\"]\n  Q --> S[\"Mutual Inductance M\"]\n  Q --> T[\"Stored Energy Wm\"]"
+}
