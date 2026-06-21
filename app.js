@@ -232,6 +232,23 @@ function bindEvents() {
 
   // Bind dropdown option clicks
   bindReadingSettingsEvents();
+
+  // Mobile virtual keyboard viewport adaptation
+  dom.chatInput.addEventListener('focus', () => {
+    setTimeout(() => {
+      dom.chatInput.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      dom.chatMessages.scrollTop = dom.chatMessages.scrollHeight;
+    }, 200);
+  });
+
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => {
+      if (activeChatSectionIdx !== null && dom.chatPanel.classList.contains('open')) {
+        dom.chatPanel.style.height = `${window.visualViewport.height}px`;
+        dom.chatMessages.scrollTop = dom.chatMessages.scrollHeight;
+      }
+    });
+  }
 }
 
 /* ══════════════════════════════════════════════
@@ -1135,6 +1152,9 @@ async function openChat(sectionIdx) {
   // Slide in panel and backdrop
   dom.chatPanel.classList.add('open');
   dom.chatBackdrop.classList.add('open');
+  if (window.visualViewport) {
+    dom.chatPanel.style.height = `${window.visualViewport.height}px`;
+  }
   
   // Reset input value & height
   dom.chatInput.value = '';
@@ -1172,6 +1192,7 @@ async function openChat(sectionIdx) {
 function closeChat() {
   dom.chatPanel.classList.remove('open');
   dom.chatBackdrop.classList.remove('open');
+  dom.chatPanel.style.height = '';
   cleanupChatVisualizer();
   activeChatSectionIdx = null;
 }
