@@ -1,0 +1,220 @@
+window.chapter4Notes = {
+  "documentTitle": "Chapter 4: Time-Varying Fields & Maxwell's Equations",
+  "overview": "This chapter covers the principles of time-varying electromagnetic fields, bridging the gap between independent static fields and dynamic electromagnetism. We cover Faraday's Law, Lenz's Law, the physical operation of ideal transformers, motional electromotive forces (EMF) in moving conductors, and the mathematical framework of Maxwell's equations. These principles form the theoretical foundation for electric generators, transformers, and electromagnetic wave propagation.",
+  "sections": [
+    {
+      "title": "Faraday's Law of Electromagnetic Induction",
+      "pdfPages": [
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "content": "### Electrostatic vs. Time-Varying Fields\n\nUntil now, we have studied static fields: electrostatics (where electric charges are stationary) and magnetostatics (where electric currents flow steadily without change). In the static case, electric and magnetic fields are completely independent. A static electric field is conservative ($\\nabla \\times \\vec{E} = 0$), and a static magnetic field cannot induce an electric current.\n\nIn 1831, Michael Faraday discovered that when fields change with time, they become interconnected. A **time-varying magnetic field** acts as a source for an electric field, inducing a voltage (electromotive force, or EMF) in a closed circuit. This process is called **electromagnetic induction**. This discovery laid the foundation for the modern electrical grid, enabling generators, transformers, and induction motors. You can find this outlined on [Page 3](pdf-page://3) and [Page 4](pdf-page://4).\n\n### Physical Experiments & Observations\n\nFaraday's discoveries were based on simple physical experiments, which are summarized on [Page 5](pdf-page://5):\n1. **Moving Magnet in a Coil**: If a bar magnet is pushed into a stationary coil of wire, a voltage is induced. Pushing the magnet in causes the voltmeter needle to deflect in one direction. Pulling it out causes it to deflect in the opposite direction. Reversing the magnet's poles also reverses the direction of the induced voltage.\n2. **Relative Motion**: The exact same voltage is induced if the magnet is kept stationary and the coil is moved. This demonstrates that it is the **relative motion** between the conductor and the magnetic field source that drives induction.\n3. **Rate of Change**: The faster the magnet or coil is moved, the larger the induced voltage. When all motion stops, the voltmeter drops to zero, even if the magnet is inside the coil. Induction only occurs when the magnetic flux is actively changing.\n4. **Two Circuits (Mutual Induction)**: As shown on [Page 6](pdf-page://6), if we place two circuits near each other, closing the switch of Circuit 1 establishes a magnetic field, causing a short-lived voltage spike in Circuit 2. When the current in Circuit 1 becomes steady, the voltage in Circuit 2 drops to zero. Opening the switch in Circuit 1 causes a temporary voltage spike in Circuit 2 in the opposite direction.\n\n### Defining Magnetic Flux\n\nTo write this mathematically, we must first define **Magnetic Flux** (denoted by $\\Phi_m$). Magnetic flux measures the total amount of magnetic field passing through a given surface area. We can calculate the flux through a surface $S$ as the integral of the magnetic flux density $\\vec{B}$ (refer to [Page 8](pdf-page://8)):\n\n<div class=\\\"formula-box\\\">\n$$\\Phi_m = \\iint_S \\vec{B} \\cdot d\\vec{A} = \\iint_S \\vec{B} \\cdot \\hat{n} dA$$\n</div>\n\n#### Mathematical Operator Definitions:\n- **$\\iint_S$ (Surface Integral)**: Sums up a value over a two-dimensional surface area $S$.\n- **$\\cdot$ (Dot Product)**: Multiplies parallel components of two vectors together, resulting in a single scalar number. Here, it multiplies the magnetic field $\\vec{B}$ and the surface normal vector $\\hat{n}$ to count only the field passing directly *through* the surface.\n\n#### Symbol-by-Symbol Variable Breakdown:\n- **$\\Phi_m$ (Magnetic Flux)**: The total magnetic \"flow\" passing through a surface, in **Webers (Wb)**.\n- **$\\vec{B}$ (Magnetic Flux Density)**: The strength and direction of the magnetic field, in **Teslas (T)**.\n- **$S$ (Surface)**: The 2D surface area through which flux is calculated.\n- **$d\\vec{A}$ or $\\hat{n} dA$ (Differential Surface Area Element)**: A tiny vector representing an infinitesimal patch of the surface. Its magnitude is the area $dA$, and its direction is perpendicular (normal, $\\hat{n}$) to the surface.\n\n### The Mathematical Formulation of Faraday's Law\n\nFaraday's Law states that the induced electromotive force $\\epsilon$ in a closed loop is equal to the negative rate of change of magnetic flux linking that loop. For a coil consisting of $N$ tightly wound turns, the total flux linkage is $N\\Phi_m$, and the induced EMF is defined by the following formula:\n\n<div class=\\\"formula-box\\\">\n$$\\epsilon = -N\\frac{d\\Phi_m}{dt}$$\n</div>\n\n#### Mathematical Operator Definitions:\n- **$\\frac{d}{dt}$ (Time Derivative)**: A calculus operator representing the instantaneous rate of change of a quantity with respect to time $t$.\n- **$-$ (Negative Sign)**: Represents Lenz's Law, indicating that the induced EMF opposes the change in magnetic flux that created it.\n- **Division / Fraction line ($\\frac{a}{b}$)**: Division operator representing the rate ratio.\n- **$=$ (Equals sign)**: States mathematical equivalence.\n\n#### Symbol-by-Symbol Variable Breakdown:\n- **$\\epsilon$ (Induced Electromotive Force, or EMF)**: The induced voltage produced by the changing magnetic field, in **Volts (V)**.\n- **$N$ (Number of Turns)**: The number of wire loops wound together in the coil.\n- **$\\frac{d\\Phi_m}{dt}$ (Rate of Flux Change)**: The derivative of magnetic flux with respect to time, in **Webers/second (Wb/s)**.\n\n#### Physics of the Equation Layout:\n- The rate of change $\\frac{d\\Phi_m}{dt}$ is in the numerator because a faster change in magnetic field creates a higher voltage.\n- The turn count $N$ is in the numerator because the voltage induced in each individual loop adds up in series along the coil.\n\n### Why do we need a Visualization here?\n\nElectromagnetism can feel abstract because you cannot see magnetic fields. In our interactive plot, we graph **Magnetic Flux vs. Induced EMF** over time. By looking at the curves, you can see that when the flux is constant (flat line), the induced EMF is exactly zero, even if the flux value itself is very high. The EMF only peaks when the flux is changing rapidly (steep slope). The visualization makes the mathematical derivative ($\\frac{d\\Phi_m}{dt}$) instantly clear.\n\n### Worked Example\n\nA square coil of wire with sides $l = 0.25\\text{ m}$ is tightly wound with $N = 200$ turns of wire. The total resistance of the coil is $R = 5.0\\,\\Omega$. The coil is placed in a spatially uniform magnetic field directed perpendicular to the face of the coil. The field magnitude is decreasing at a rate of $\\frac{dB}{dt} = -0.04\\text{ T/s}$ (as shown in [Page 10](pdf-page://10)).\n1. What is the magnitude of the induced EMF?\n2. What is the magnitude of the current circulating in the coil?\n\n**Solution:**\n1. Since the magnetic field is uniform and perpendicular to the area $A = l^2$:\n   $$\\Phi_m = B A = B l^2$$\n   Using Faraday's Law, the induced EMF is:\n   $$\\epsilon = -N\\frac{d\\Phi_m}{dt} = -N l^2 \\frac{dB}{dt}$$\n   Substitute the values:\n   $$\\epsilon = -(200) (0.25)^2 (-0.04) = -200 (0.0625) (-0.04) = 0.5\\text{ V}$$\n   The magnitude of the induced EMF is $0.5\\text{ V}$ (see [Page 11](pdf-page://11)).\n\n2. Using Ohm's Law ($I = \\frac{\\epsilon}{R}$):\n   $$I = \\frac{0.5\\text{ V}}{5.0\\,\\Omega} = 0.1\\text{ A}$$\n   The current circulating in the coil is $0.1\\text{ A}$.",
+      "equations": [
+        {
+          "label": "Magnetic Flux",
+          "latex": "\\Phi_m = \\iint_S \\vec{B} \\cdot \\hat{n} dA"
+        },
+        {
+          "label": "Faraday's Law (N turns)",
+          "latex": "\\epsilon = -N \\frac{d\\Phi_m}{dt}"
+        },
+        {
+          "label": "Ohm's Law for Induction",
+          "latex": "I = \\frac{\\epsilon}{R}"
+        }
+      ],
+      "visualization": {
+        "type": "plot",
+        "title": "Magnetic Flux vs. Induced EMF",
+        "description": "Notice how a linearly decreasing magnetic flux (red curve) produces a constant positive induced EMF (blue curve) in accordance with Faraday's Law.",
+        "config": {
+          "curves": [
+            {
+              "expr": "1 - 0.2*x",
+              "color": "#e74c3c",
+              "label": "Flux Φ(t) [Wb]"
+            },
+            {
+              "expr": "0.2",
+              "color": "#3498db",
+              "label": "EMF ε(t) = -dΦ/dt [V]"
+            }
+          ],
+          "xRange": [
+            0,
+            5
+          ],
+          "yRange": [
+            -0.5,
+            1.5
+          ],
+          "xLabel": "Time t [s]",
+          "yLabel": "Magnitude"
+        }
+      }
+    },
+    {
+      "title": "Lenz's Law & Direction of Induced EMF",
+      "pdfPages": [
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26
+      ],
+      "content": "### What is Lenz's Law?\n\nFaraday's Law tells us the *magnitude* of the induced EMF, but it doesn't specify the direction in which the induced current will circulate. That direction is governed by **Lenz's Law**, formulated by Heinrich Lenz in 1834. This law is explained on [Page 13](pdf-page://13) and [Page 14](pdf-page://14).\n\nLenz's Law states: \n> The direction of the induced current is always such that the magnetic field it creates **opposes the change** in the magnetic flux that created it.\n\nThink of nature as being stubborn: it fights any change in its magnetic state. \n- If the magnetic flux through a loop is **increasing**, the loop will drive a current to create an induced magnetic field pointing in the **opposite direction** to counteract the increase.\n- If the magnetic flux through a loop is **decreasing**, the loop will drive a current to create an induced magnetic field pointing in the **same direction** to support the falling field and prevent it from dying.\n\n### Why does this happen? (Conservation of Energy)\n\nLenz's Law is not an arbitrary rule; it is a direct consequence of the **Law of Conservation of Energy** (energy cannot be created out of nothing). \n\nImagine if the opposite were true: pushing a magnet into a loop induced a current that *reinforced* the magnet's field. The magnet would be pulled in faster, inducing more current, which would strengthen the field further, pulling the magnet even faster, generating infinite energy! This would be a runaway machine that violates the laws of physics. Thus, the induced current *must* oppose the magnet's motion, requiring you to do mechanical work to push the magnet in, converting your mechanical energy into electrical energy.\n\n### Step-by-Step Guide to Right-Hand Rule 2 (RHR-2) for Induction\n\nFinding the direction of induced current is a classic exam question, and it can be tricky. We use **Right-Hand Rule 2 (RHR-2)** to find it. Follow these steps carefully (referenced on [Page 14](pdf-page://14) and [Page 15](pdf-page://15)):\n\n1. **Identify the External Field ($\\vec{B}_{ext}$)**:\n   Determine which direction the external magnetic field is pointing. Is it pointing *into the page* (represented by $\\otimes$) or *out of the page* (represented by $\\odot$)?\n2. **Determine the Trend (Change)**:\n   Is the external magnetic field getting **stronger** (increasing flux) or **weaker** (decreasing flux)?\n3. **Find the Induced Field Direction ($\\vec{B}_{ind}$)**:\n   - If the flux is **increasing**, the induced field $\\vec{B}_{ind}$ must point in the **opposite** direction to $\\vec{B}_{ext}$ (to fight the increase).\n   - If the flux is **decreasing**, the induced field $\\vec{B}_{ind}$ must point in the **same** direction as $\\vec{B}_{ext}$ (to fight the decrease by adding to it).\n4. **Apply the Right Hand**:\n   - Point your right thumb in the direction of the induced field $\\vec{B}_{ind}$ you found in Step 3.\n   - Curl your fingers. The direction your fingers curl is the direction of the induced current $I$ around the loop!\n   - Curling counterclockwise means current flows CCW. Curling clockwise means current flows CW.\n\nThis hand positioning is illustrated on [Page 16](pdf-page://16) and [Page 17](pdf-page://17).\n\n### Worked Example\n\nA circular coil of radius $r = 0.5\\text{ m}$ has $N=1$ turn and resistance $R = 10\\,\\Omega$. A magnetic field perpendicular to the loop plane decays exponentially according to $B(t) = 1.5 e^{-5.0 t}$ Teslas. Find the induced EMF and current at $t=0\\text{ s}$, and determine the current direction (similar to [Page 20](pdf-page://20)).\n\n**Solution:**\n1. **Magnetic Flux**: Since the field is perpendicular, $\\Phi_m(t) = B(t) A = (1.5 e^{-5t}) \\cdot \\pi r^2 = 1.5 e^{-5t} \\cdot \\pi (0.5)^2 = 0.375 \\pi e^{-5t} \\approx 1.178 e^{-5t}\\text{ Wb}$ (see [Page 22](pdf-page://22)).\n2. **Induced EMF**: Using Faraday's Law:\n   $$\\epsilon = \\left| -\\frac{d\\Phi_m}{dt} \\right| = 5 \\cdot 1.178 e^{-5t} \\approx 5.89 e^{-5t}\\text{ V}$$\n   At $t=0$, the induced EMF is $\\epsilon(0) = 5.89\\text{ V}$ (or $6.0\\text{ V}$ rounded, as on [Page 23](pdf-page://23)).\n3. **Induced Current**: Using Ohm's Law:\n   $$I(0) = \\frac{\\epsilon(0)}{R} = \\frac{5.89\\text{ V}}{10\\,\\Omega} = 0.589\\text{ A}$$\n4. **Current Direction**: The external field points *out of the page* ($\\odot$) and is *decreasing* in strength. To oppose this decrease, the loop must generate its own magnetic field pointing *out of the page* ($\\odot$). By pointing your right thumb out of the page, your fingers curl **counterclockwise**. Thus, the current flows counterclockwise (see [Page 23](pdf-page://23)).",
+      "equations": [
+        {
+          "label": "Lenz's Law Opposition",
+          "latex": "\\vec{B}_{ind} \\text{ opposes } \\Delta\\Phi_{ext}"
+        },
+        {
+          "label": "Exponential B-Field",
+          "latex": "B(t) = B_0 e^{-\\alpha t}"
+        },
+        {
+          "label": "EMF Magnitude",
+          "latex": "\\epsilon = \\left| \\frac{d\\Phi_m}{dt} \\right|"
+        }
+      ],
+      "visualization": {
+        "type": "field2d",
+        "title": "Induced Magnetic Field Loop",
+        "description": "Drag the charge/current source to see how the magnetic field lines form closed loops around the wire, representing how current opposes external field changes.",
+        "config": {
+          "fieldType": "magnetic",
+          "lineCount": 16,
+          "sources": [
+            {
+              "x": 0.5,
+              "y": 0.5,
+              "strength": 2.0,
+              "label": "I",
+              "type": "current"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "title": "Ideal Transformers",
+      "pdfPages": [
+        31,
+        32,
+        33,
+        34,
+        35
+      ],
+      "content": "### What is a Transformer?\n\nAn electrical transformer is a device that transfers electrical energy between circuits through electromagnetic induction, usually changing the voltage level in the process. It is a critical component in electrical distribution, allowing power lines to operate at high voltages to minimize losses. This is explained on [Page 31](pdf-page://31) and [Page 32](pdf-page://32).\n\n### Structure and Principle of Operation\n\nA basic transformer consists of two coils wound around a shared ferromagnetic (iron) core:\n- **Primary Coil**: Connected to the AC input voltage source $V_1(t)$ with $N_1$ turns of wire.\n- **Secondary Coil**: Connected to the output load resistance $R_L$ with $N_2$ turns of wire.\n\nWhen an alternating current (AC) flows through the primary coil, it generates a time-varying magnetic flux $\\Phi(t)$ in the core. The iron core acts like a pipe, directing this flux through the secondary coil. Since the secondary coil experiences a changing magnetic flux, a voltage $V_2(t)$ is induced across its terminals via Faraday's Law. This relationship is derived on [Page 32](pdf-page://32).\n\n### The Transformer Equations\n\nFor an ideal, lossless transformer, the magnetic flux passing through each turn of both coils is identical. Therefore, the terminal voltages are:\n\n<div class=\\\"formula-box\\\">\n$$V_1 = -N_1 \\frac{d\\Phi}{dt}, \\quad V_2 = -N_2 \\frac{d\\Phi}{dt}$$\n</div>\n\nDividing these equations gives the **Voltage Transformation Ratio**:\n\n<div class=\\\"formula-box\\\">\n$$\\frac{V_1}{V_2} = \\frac{N_1}{N_2}$$\n</div>\n\nSince an ideal transformer has no power losses ($P_{in} = P_{out}$), the input power must equal the output power:\n\n<div class=\\\"formula-box\\\">\n$$V_1 I_1 = V_2 I_2 \\implies \\frac{I_1}{I_2} = \\frac{N_2}{N_1}$$\n</div>\n\nThis means if a transformer steps up the voltage, it steps down the current by the exact same factor, conserving energy. These relations are shown on [Page 33](pdf-page://33).\n\n#### Mathematical Operator Definitions:\n- **$\\implies$ (Logical Implication)**: Shows derivation flow (conservation of power leading to the current ratio).\n- **Division / Fraction line ($\\frac{a}{b}$)**: Division operator representing ratios of voltage, current, turns, and derivatives.\n- **$-$ (Negative Sign)**: Represents Lenz's Law phase opposition.\n- **$=$ (Equals sign)**: States mathematical equivalence.\n- **Implied Multiplication (e.g., $V_1 I_1$)**: Represents electrical power $P = V \\cdot I$.\n\n#### Symbol-by-Symbol Variable Breakdown:\n- **$V_1, V_2$ (Terminal Voltages)**: Primary and secondary terminal voltages, in **Volts (V)**.\n- **$N_1, N_2$ (Number of Turns)**: Number of wire turns wrapped around the primary and secondary cores.\n- **$\\frac{d\\Phi}{dt}$ (Rate of Flux Change)**: Time rate of change of the shared magnetic flux, in **Webers/second (Wb/s)**.\n- **$I_1, I_2$ (Coil Currents)**: Electric currents flowing in the primary and secondary coils, in **Amperes (A)**.\n\n### Input Impedance Matching\n\nThe load resistance $R_L$ connected to the secondary coil is \"seen\" by the primary source as an equivalent input resistance $R_{in}$:\n\n<div class=\\\"formula-box\\\">\n$$R_{in} = \\frac{V_1}{I_1} = \\left(\\frac{N_1}{N_2}\\right)^2 R_L$$\n</div>\n\n#### Mathematical Operator Definitions:\n- **Division / Fraction line ($\\frac{a}{b}$)**: Division operator.\n- **$^2$ (Square)**: Multiplying the turn ratio by itself.\n- **$=$ (Equals sign)**: Mathematical equivalence.\n\n#### Symbol-by-Symbol Variable Breakdown:\n- **$R_{in}$ (Input Resistance)**: The equivalent load resistance seen by the primary source, in **Ohms ($\\Omega$)**.\n- **$R_L$ (Load Resistance)**: The physical load resistance connected to the secondary terminals, in **Ohms ($\\Omega$)**.\n- **$V_1$ (Primary Voltage)**: Primary terminal voltage, in **Volts (V)**.\n- **$I_1$ (Primary Current)**: Primary coil current, in **Amperes (A)**.\n- **$N_1, N_2$ (Number of Turns)**: Number of primary and secondary wire turns.\n\n### Worked Example: Power Transmission Losses\n\nA transformer steps down the utility pole voltage from $12\\text{ kV}$ rms to $240\\text{ V}$ rms. \n1. Find the turn ratio $N_2 / N_1$.\n2. If the input current is $I_1 = 2.0\\text{ A}$, find the output current $I_2$.\n3. If the transmission line has a resistance of $200\\,\\Omega$, find the power loss at $12\\text{ kV}$ versus transmitting the same power at $240\\text{ V}$ (see [Page 34](pdf-page://34)).\n\n**Solution:**\n1. Turn ratio:\n   $$\\frac{N_2}{N_1} = \\frac{V_2}{V_1} = \\frac{240\\text{ V}}{12000\\text{ V}} = 0.02 = \\frac{1}{50}$$\n2. Output current:\n   $$I_2 = I_1 \\left(\\frac{N_1}{N_2}\\right) = 2.0\\text{ A} \\times 50 = 100\\text{ A}$$\n3. Power loss comparison:\n   - **At 12 kV**: The current is $I_1 = 2\\text{ A}$. The power loss is:\n     $$P_{loss1} = I_1^2 R_{line} = (2)^2 (200) = 800\\text{ W}$$\n   - **At 240 V**: The current required to transmit the same power is $I_2 = 100\\text{ A}$. The power loss would be:\n     $$P_{loss2} = I_2^2 R_{line} = (100)^2 (200) = 2,000,000\\text{ W} = 2\\text{ MW}$$\n   This clearly demonstrates why power transmission lines operate at high voltage: to keep currents low and minimize $I^2R$ heating losses.",
+      "equations": [
+        {
+          "label": "Voltage Ratio",
+          "latex": "\\frac{V_1}{V_2} = \\frac{N_1}{N_2}"
+        },
+        {
+          "label": "Current Ratio",
+          "latex": "\\frac{I_1}{I_2} = \\frac{N_2}{N_1}"
+        },
+        {
+          "label": "Reflected Impedance",
+          "latex": "R_{in} = \\left(\\frac{N_1}{N_2}\\right)^2 R_L"
+        }
+      ],
+      "visualization": {
+        "type": "plot",
+        "title": "AC Transformer Waveforms",
+        "description": "Visualizing primary voltage (red) and stepped-down secondary voltage (blue) in a 10:1 step-down transformer configuration.",
+        "config": {
+          "curves": [
+            {
+              "expr": "2 * sin(x)",
+              "color": "#e74c3c",
+              "label": "V1(t) Primary [x10 kV]"
+            },
+            {
+              "expr": "0.2 * sin(x)",
+              "color": "#3498db",
+              "label": "V2(t) Secondary [x10 kV]"
+            }
+          ],
+          "xRange": [
+            0,
+            6.28
+          ],
+          "yRange": [
+            -2.5,
+            2.5
+          ],
+          "xLabel": "Time wt [rad]",
+          "yLabel": "Voltage"
+        }
+      }
+    },
+    {
+      "title": "Motional Electromotive Force",
+      "pdfPages": [
+        30,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47
+      ],
+      "content": "### Physical Concept of Motional EMF\n\nIn Faraday's experiments, we changed the magnetic field over time to induce a voltage in a stationary circuit. However, a voltage can also be induced by **moving a conductor** through a static magnetic field. This is known as **Motional EMF**, and it is the physical mechanism behind electric generators. This concept is introduced on [Page 30](pdf-page://30) and [Page 36](pdf-page://36).\n\nWhen a conductor moves through a magnetic field, the free charges inside the conductor move along with it. A charge $q$ moving with velocity $\\vec{v}$ in a magnetic field $\\vec{B}$ experiences a magnetic Lorentz force:\n\n<div class=\\\"formula-box\\\">\n$$\\vec{F}_m = q (\\vec{v} \\times \\vec{B})$$\n</div>\n\n#### Mathematical Operator Definitions:\n- **$\\times$ (Cross Product)**: Vector multiplication where the result is a vector perpendicular to both input vectors. Here, the force $\\vec{F}_m$ is perpendicular to both the velocity vector $\\vec{v}$ and the magnetic field vector $\\vec{B}$.\n\n#### Symbol-by-Symbol Variable Breakdown:\n- **$\\vec{F}_m$ (Magnetic Lorentz Force)**: The deflecting force exerted on the charge by the magnetic field, in **Newtons (N)**.\n- **$q$ (Electric Charge)**: The amount of charge carried by the moving particle, in **Coulombs (C)**.\n- **$\\vec{v}$ (Velocity Vector)**: The speed and direction at which the charge is moving, in **meters/second (m/s)**.\n- **$\\vec{B}$ (Magnetic Flux Density)**: The strength and direction of the external magnetic field, in **Teslas (T)**.\n\nThis force pushes positive charges to one end of the conductor and negative charges to the other, creating a charge separation. This separation builds up an electric field $\\vec{E}$ inside the conductor. The accumulation of charges stops when the electric force balances the magnetic force:\n\n<div class=\\\"formula-box\\\">\n$$\\vec{F}_e = \\vec{F}_m \\implies q E = q v B \\implies E = v B$$\n</div>\n\n#### Mathematical Operator Definitions:\n- **$\\implies$ (Logical Implication)**: Indicates derivation flow showing one physical equivalence leads to the next.\n- **$=$ (Equals sign)**: States mathematical equivalence.\n- **Implied Multiplication**: Indicates adjacent variables are multiplied together.\n\n#### Symbol-by-Symbol Variable Breakdown:\n- **$\\vec{F}_e, \\vec{F}_m$ (Electric and Magnetic Forces)**: Force vectors acting on the charge, in **Newtons (N)**.\n- **$q$ (Electric Charge)**: The charge magnitude of the particle, in **Coulombs (C)**.\n- **$E$ (Electric Field Magnitude)**: The induced electric field strength, in **Volts/meter (V/m)**.\n- **$v$ (Velocity Magnitude)**: The speed of the moving charge, in **meters/second (m/s)**.\n- **$B$ (Magnetic Flux Density Magnitude)**: The external field strength, in **Teslas (T)**.\n\nThe potential difference across a conductor of length $l$ is therefore:\n\n<div class=\\\"formula-box\\\">\n$$\\epsilon = B l v$$\n</div>\n\n#### Mathematical Operator Definitions:\n- **$=$ (Equals sign)**: States mathematical equivalence.\n- **Implied Multiplication**: Indicates $B$, $l$, and $v$ are multiplied together.\n\n#### Symbol-by-Symbol Variable Breakdown:\n- **$\\epsilon$ (Motional EMF)**: The induced potential difference (voltage) across the wire, in **Volts (V)**.\n- **$B$ (Magnetic Flux Density)**: The strength of the perpendicular magnetic field, in **Teslas (T)**.\n- **$l$ (Conductor Length)**: The physical length of the moving wire segment, in **meters (m)**.\n- **$v$ (Velocity)**: The speed of the wire moving perpendicular to the magnetic field, in **meters/second (m/s)**.\n\nThis equation is derived on [Page 37](pdf-page://37).\n\n### Sliding Conducting Rod on Rails\n\nConsider a metal rod of length $l$ sliding to the right at a constant velocity $v$ along a pair of parallel, frictionless conducting rails. The rails are connected at one end by a resistor $R$, forming a closed loop. The system is placed in a perpendicular magnetic field $B$ pointing into the page (see [Page 37](pdf-page://37)).\n\nThe magnetic flux through the closed loop of width $x$ is:\n\n<div class=\\\"formula-box\\\">\n$$\\Phi_m = B A = B l x$$\n</div>\n\nSince the rod moves, the width $x$ changes with time ($v = \\frac{dx}{dt}$). By Faraday's Law, the induced EMF magnitude is:\n\n<div class=\\\"formula-box\\\">\n$$\\epsilon = \\frac{d\\Phi_m}{dt} = B l \\frac{dx}{dt} = B l v$$\n</div>\n\nThe current flowing in the circuit is:\n\n<div class=\\\"formula-box\\\">\n$$I = \\frac{\\epsilon}{R} = \\frac{B l v}{R}$$\n</div>\n\n#### Mathematical Operator Definitions:\n- **Division / Fraction line ($\\frac{a}{b}$)**: Division operator representing derivatives or ratio divisions.\n- **$=$ (Equals sign)**: States mathematical equivalence.\n\n#### Symbol-by-Symbol Variable Breakdown:\n- **$I$ (Induced Current)**: The current circulating in the loop, in **Amperes (A)**.\n- **$\\epsilon$ (Motional EMF)**: The induced potential difference, in **Volts (V)**.\n- **$B$ (Magnetic Flux Density)**: External perpendicular field strength, in **Teslas (T)**.\n- **$l$ (Conductor Length)**: Length of the sliding rod, in **meters (m)**.\n- **$v$ (Velocity)**: Speed of sliding, in **meters/second (m/s)**.\n- **$\\Phi_m$ (Magnetic Flux)**: Flux passing through the loop, in **Webers (Wb)**.\n- **$A$ (Loop Area)**: Area of the loop ($l \\cdot x$), in **square meters ($m^2$)**.\n- **$x$ (Loop Width)**: Instaneous width of the loop, in **meters (m)**.\n- **$R$ (Resistance)**: Electrical resistance of the load resistor, in **Ohms ($\\Omega$)**.\n\nThis is detailed on [Page 38](pdf-page://38).\n\n### Energy Conversion & Conservation\n\nWhen the induced current $I$ flows through the rod, the rod itself becomes a current-carrying wire in a magnetic field. It experiences a magnetic force:\n\n<div class=\\\"formula-box\\\">\n$$\\vec{F}_m = I (\\vec{l} \\times \\vec{B}) \\implies F_m = I l B = \\frac{B^2 l^2 v}{R}$$\n</div>\n\nAccording to the Right-Hand Rule, this force points to the **left**, opposing the motion of the rod (Lenz's Law). To maintain a constant velocity, an external force $F_a$ equal to $F_m$ must be applied to the right. \n\nThe mechanical power input is:\n\n<div class=\\\"formula-box\\\">\n$$P_{mech} = F_a v = \\frac{B^2 l^2 v^2}{R}$$\n</div>\n\n- **$P_{mech}$ (Mechanical Power Input)**: The rate of mechanical work done to push the rod against the magnetic field, in **Watts (W)**.\n- **$F_a$ (Applied Force)**: External mechanical force applied, in **Newtons (N)**.\n- **$F_m$ (Opposing Magnetic Force)**: Retarding magnetic Lorentz force on the current-carrying wire, in **Newtons (N)**.\n- **$\\vec{l}$ (Length Vector)**: Conductor length and direction vector, in **meters (m)**.\n- **$\\vec{B}$ (Magnetic Flux Density Vector)**: External magnetic field vector, in **Teslas (T)**.\n- **$\\times$ (Cross Product)**: Vector cross product.\n- **$\\implies$ (Logical Implication)**: Derivation connector.\n- **$^2$ (Square)**: Represents squaring the terms.\n\nThe electrical power dissipated in the resistor is:\n\n<div class=\\\"formula-box\\\">\n$$P_{elec} = I^2 R = \\frac{B^2 l^2 v^2}{R}$$\n</div>\n\n- **$P_{elec}$ (Electrical Power Dissipated)**: The rate at which electrical energy is converted into heat in the resistor, in **Watts (W)**.\n- **$I$ (Induced Current)**: Current flowing through the resistor, in **Amperes (A)**.\n- **$R$ (Resistance)**: Electrical resistance of the load, in **Ohms ($\\Omega$)**.\n- **Power Equality**: Notice that $P_{mech} = P_{elec}$. Mechanical energy is converted into electrical energy, satisfying the law of conservation of energy (detailed on [Page 39](pdf-page://39)).\n\n### Rotating Conducting Rod\n\nIf a conducting rod of length $r$ rotates at a constant angular velocity $\\omega$ around one end in a uniform magnetic field $B$:\n\n<div class=\\\"formula-box\\\">\n$$\\Phi_m = B A = B \\left(\\frac{1}{2} r^2 \\theta\\right)$$\n</div>\n\n<div class=\\\"formula-box\\\">\n$$\\epsilon = \\frac{1}{2} B r^2 \\omega$$\n</div>\n\n#### Mathematical Operator Definitions:\n- **$=$ (Equals sign)**: States mathematical equivalence.\n- **$^2$ (Square)**: Multiplying rotating length by itself.\n- **Implied Multiplication**: Multiplies adjacent factors.\n\n#### Symbol-by-Symbol Variable Breakdown:\n- **$\\epsilon$ (Induced EMF)**: Induced potential difference, in **Volts (V)**.\n- **$\\Phi_m$ (Magnetic Flux)**: Swept magnetic flux, in **Webers (Wb)**.\n- **$B$ (Magnetic Flux Density)**: External perpendicular field strength, in **Teslas (T)**.\n- **$A$ (Swept Circular Area)**: Area of the swept circular sector ($A = \\frac{1}{2} r^2 \\theta$), in **square meters ($m^2$)**.\n- **$\\theta$ (Swept Angle)**: Angular displacement of the rod, in **radians**.\n- **$r$ (Rod Radius/Length)**: The physical length of the rotating rod, in **meters (m)**.\n- **$\\omega$ (Angular Velocity)**: The speed of rotation ($d\\theta/dt$), in **radians/second (rad/s)**.\n- **$\\frac{1}{2}$ Factor**: Represents the average speed. The speed of the rod increases linearly from 0 at the pivot end to $v = \\omega r$ at the outer tip, so the average speed is $\\frac{1}{2} \\omega r$.\n\nThis derivation and its corresponding current calculations are outlined on [Page 43](pdf-page://43) and [Page 44](pdf-page://44).",
+      "equations": [
+        {
+          "label": "Motional EMF",
+          "latex": "\\epsilon = B l v"
+        },
+        {
+          "label": "Induced Current",
+          "latex": "I = \\frac{B l v}{R}"
+        },
+        {
+          "label": "Mechanical Power",
+          "latex": "P = \\frac{B^2 l^2 v^2}{R}"
+        },
+        {
+          "label": "Rotating Rod EMF",
+          "latex": "\\epsilon = \\frac{1}{2} B r^2 \\omega"
+        }
+      ],
+      "visualization": {
+        "type": "wave",
+        "title": "EM Wave Induction",
+        "description": "Visualizing how fields propagate. The motional force induces orthogonal E-field (red) and B-field (blue) waves traveling through space.",
+        "config": {
+          "waveType": "em",
+          "frequency": 1.2,
+          "amplitude": 0.8,
+          "wavelength": 150
+        }
+      }
+    }
+  ],
+  "mindMap": "graph TD\n  A[\"Time-Varying Fields\"] --> B[\"Faraday's Law\"]\n  A --> C[\"Motional EMF\"]\n  A --> D[\"Ideal Transformers\"]\n  B --> E[\"Lenz's Law\"]\n  E --> F[\"RHR-2 Direction\"]\n  C --> G[\"Energy Conservation\"]\n  C --> H[\"Rotating Rod\"]\n  D --> I[\"Voltage Ratio\"]\n  D --> J[\"Impedance Matching\"]"
+};

@@ -1,4 +1,4 @@
-{
+window.chapter3Notes = {
   "documentTitle": "Chapter 3: Magnetostatics",
   "overview": "These comprehensive study notes cover Chapter 3: Magnetostatics. Magnetostatics is the study of magnetic fields produced by steady, non-time-varying currents. We cover fundamental formulations including Oersted's discovery, Biot-Savart's Law, Ampere's Circuital Law, Maxwell's magnetostatic equations, magnetic vector potential, magnetic forces and torques, properties of magnetic materials, boundary conditions, and self/mutual inductance.",
   "sections": [
@@ -660,4 +660,4 @@
     }
   ],
   "mindMap": "graph TD\n  A[\"Magnetostatics\"] --> B[\"Maxwell's Equations\"]\n  A --> C[\"Biot-Savart's Law\"]\n  A --> D[\"Ampere's Circuital Law\"]\n  B --> E[\"Gauss's Law for Magnetism\"]\n  C --> F[\"Line Current\"]\n  C --> G[\"Circular Loop\"]\n  D --> H[\"Infinite Sheet\"]\n  D --> I[\"Toroid/Solenoid\"]\n  A --> J[\"Magnetic Potential & Forces\"]\n  J --> K[\"Vector Potential A\"]\n  J --> L[\"Lorentz Force\"]\n  J --> M[\"Dipole Torque\"]\n  A --> N[\"Materials & Boundaries\"]\n  N --> O[\"Hysteresis Loop\"]\n  N --> P[\"Boundary Conditions\"]\n  A --> Q[\"Inductance & Energy\"]\n  Q --> R[\"Self Inductance L\"]\n  Q --> S[\"Mutual Inductance M\"]\n  Q --> T[\"Stored Energy Wm\"]"
-}
+};

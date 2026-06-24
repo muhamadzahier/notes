@@ -1,253 +1,848 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Course Notes — AI Study Companion</title>
-  <meta name="description" content="Interactive AI-powered course note viewer with KaTeX math, interactive physics visualizations, and Gemini-generated study notes.">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Simulator Platform</title>
+    <!-- KaTeX CDN for mathematical typesetting -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Three.js and OrbitControls CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
-  <!-- KaTeX (Math) -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
+    <style>
+        /* Minimalist Black & White Theme */
+        :root {
+            --bg-primary: #ffffff;
+            --text-primary: #000000;
+            --border-color: #000000;
+            --hover-bg: #000000;
+            --hover-text: #ffffff;
+            --gray-light: #f5f5f5;
+            --gray-medium: #e0e0e0;
+            --gray-dark: #333333;
+        }
 
-  <!-- PDF.js -->
-  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
 
-  <!-- Marked (Markdown) -->
-  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.5;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
 
-  <!-- Mermaid (Diagrams) -->
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+        a, button, input, select, textarea {
+            font-family: inherit;
+            color: inherit;
+        }
 
-  <!-- Three.js (3D) -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+        /* Typography */
+        h1, h2, h3, h4, h5, h6 {
+            font-weight: 800;
+            letter-spacing: -0.025em;
+        }
 
-  <!-- Highlight.js -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/github.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/lib/highlight.min.js"></script>
+        /* Navigation Bar */
+        header {
+            border-bottom: 2px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            background: var(--bg-primary);
+            z-index: 100;
+        }
 
-  <link rel="stylesheet" href="styles.css">
+        .nav-container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .brand {
+            font-weight: 800;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-size: 1.2rem;
+            border: 2px solid var(--border-color);
+            padding: 0.25rem 0.75rem;
+        }
+
+        .brand:hover {
+            background-color: var(--hover-bg);
+            color: var(--hover-text);
+        }
+
+        .nav-breadcrumbs {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        /* Button styling */
+        .btn-minimal {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .btn-minimal:hover {
+            background-color: var(--hover-bg);
+            color: var(--hover-text);
+        }
+
+        /* Layout Views */
+        main {
+            flex: 1;
+            max-width: 100%;
+            width: 100%;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Homescreen Dashboard CSS */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2.5rem;
+        }
+
+        @media (min-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 2fr 1fr;
+            }
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Catalog Card CSS */
+        .semester-section {
+            margin-bottom: 2rem;
+        }
+
+        .course-list {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        @media (min-width: 640px) {
+            .course-list {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .course-card {
+            border: 1px solid var(--border-color);
+            padding: 1.5rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .course-card:hover {
+            background-color: var(--hover-bg);
+            color: var(--hover-text);
+        }
+
+        .course-card h4 {
+            font-size: 1.15rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .course-card p {
+            font-size: 0.875rem;
+            opacity: 0.8;
+            margin-bottom: 1.5rem;
+        }
+
+        .course-card .arrow {
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* Saved list item CSS */
+        .saved-item {
+            border: 1px solid var(--border-color);
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        @media (min-width: 480px) {
+            .saved-item {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+
+        .saved-item-info {
+            flex: 1;
+        }
+
+        .saved-item-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .saved-item-meta {
+            font-size: 0.75rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+
+        .saved-item-actions {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .btn-action-small {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .btn-action-small:hover {
+            background-color: var(--hover-bg);
+            color: var(--hover-text);
+        }
+
+        .btn-delete {
+            border-color: #ff3b30;
+            color: #ff3b30;
+        }
+
+        .btn-delete:hover {
+            background-color: #ff3b30;
+            color: white;
+            border-color: #ff3b30;
+        }
+
+        /* Active Simulator Views Layout */
+        .simulator-header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .simulator-title-text {
+            font-size: 1.25rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        /* 3D Electromagnetics Simulator layout CSS */
+        .em-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+            height: auto;
+        }
+
+        @media (min-width: 992px) {
+            .em-grid {
+                grid-template-columns: 7fr 3fr;
+                height: calc(100vh - 200px);
+                min-height: 550px;
+            }
+        }
+
+        .canvas-container {
+            border: 1px solid var(--border-color);
+            position: relative;
+            background-color: #fafafa;
+            min-height: 400px;
+            height: 100%;
+        }
+
+        .canvas-overlay-ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            z-index: 10;
+        }
+
+        .canvas-label-coord {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #000;
+            padding: 0.25rem 0.5rem;
+            font-family: monospace;
+            font-size: 0.8rem;
+            z-index: 10;
+        }
+
+        .sidebar-container {
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background: white;
+            overflow-y: auto;
+        }
+
+        .sidebar-section {
+            border-bottom: 1px solid var(--border-color);
+            padding: 1.25rem;
+        }
+
+        .sidebar-section:last-child {
+            border-bottom: none;
+        }
+
+        .sidebar-section-title {
+            font-size: 0.9rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid var(--gray-medium);
+            padding-bottom: 0.25rem;
+        }
+
+        /* List of active spawned items */
+        .spawned-item-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--gray-medium);
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.85rem;
+        }
+
+        .spawned-item-row button {
+            color: #ff3b30;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        /* Math derivations */
+        .math-derivations-box {
+            font-size: 0.9rem;
+            white-space: normal;
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+
+        .math-derivations-box p {
+            margin-bottom: 0.75rem;
+            white-space: normal;
+            word-wrap: break-word;
+            word-break: break-word;
+        }
+
+        /* Responsive Mobile Tabs */
+        .mobile-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 1rem;
+        }
+
+        @media (min-width: 992px) {
+            .mobile-tabs {
+                display: none !important;
+            }
+        }
+
+        .tab-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 0.75rem 0.5rem;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .tab-btn.active {
+            border-bottom-color: var(--border-color);
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 0.75rem;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.375rem 0.5rem;
+            font-size: 0.875rem;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+        }
+
+        .form-control:focus {
+            outline: none;
+            background-color: var(--gray-light);
+        }
+
+        /* KaTeX custom spacing */
+        .katex-display {
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 0.5rem 0;
+        }
+
+        /* Workspace split-pane layout styling */
+        .workspace-layout {
+            display: flex;
+            width: 100%;
+            height: calc(100vh - 160px);
+            min-height: 550px;
+            gap: 0;
+            overflow: hidden;
+            border: 2px solid var(--border-color);
+            margin-top: 1rem;
+            background-color: var(--bg-primary);
+        }
+        
+        .workspace-sidebar {
+            width: 42%;
+            min-width: 380px;
+            max-width: 500px;
+            height: 100%;
+            border-right: 2px solid var(--border-color);
+            background-color: var(--bg-primary);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.2s ease;
+        }
+
+        .workspace-viewport {
+            flex: 1;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+            background-color: var(--gray-light);
+        }
+
+        /* Mode toggles logic */
+        .portal-mode-sandbox .workspace-sidebar {
+            display: none !important;
+        }
+
+        .portal-mode-sandbox .workspace-viewport {
+            width: 100%;
+        }
+
+        /* Adjust internal simulator layout when side-by-side mode is active */
+        .portal-mode-split #em-sidebar {
+            display: none !important;
+        }
+        .portal-mode-split .sidebar-container {
+            display: none !important;
+        }
+
+        .portal-mode-split .em-grid {
+            grid-template-columns: 1fr !important;
+            height: 100% !important;
+            gap: 0 !important;
+        }
+
+        .portal-mode-split .canvas-container {
+            height: 100% !important;
+            border: none !important;
+        }
+        
+        .portal-mode-split .mobile-tabs {
+            display: none !important;
+        }
+
+        /* Workspace Sidebar Content Styling */
+        .workspace-sidebar-header {
+            border-bottom: 2px solid var(--border-color);
+            padding: 1rem;
+            background-color: var(--gray-light);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .workspace-sidebar-content {
+            padding: 1.5rem;
+            flex: 1;
+            overflow-y: auto;
+        }
+        
+        .sidebar-select {
+            width: 100%;
+            padding: 0.5rem;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            border: 2px solid var(--border-color);
+            background: white;
+            cursor: pointer;
+            margin-bottom: 0.75rem;
+        }
+        .sidebar-select:focus {
+            outline: none;
+            background-color: var(--gray-light);
+        }
+
+        /* Professional SVGs in Workspace Tabs */
+        .workspace-modes-tabs {
+            display: flex;
+            gap: 0.25rem;
+            border: 2px solid var(--border-color);
+            padding: 2px;
+            background-color: var(--gray-light);
+            margin: 0 1rem;
+        }
+        
+        .mode-tab-btn {
+            background: transparent;
+            border: none;
+            padding: 0.35rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: all 0.15s ease;
+        }
+        .mode-tab-btn:hover {
+            background-color: var(--gray-medium);
+        }
+        .mode-tab-btn.active {
+            background-color: #000000;
+            color: #ffffff;
+        }
+        
+        .icon {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            stroke-width: 2.5;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+        }
+
+        /* Markdown rendering styles in Sidebar */
+        .sidebar-text-content h1, 
+        .sidebar-text-content h2 {
+            font-size: 1.15rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin: 1.5rem 0 0.75rem 0;
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 0.25rem;
+            font-weight: 800;
+        }
+        .sidebar-text-content h1:first-child,
+        .sidebar-text-content h2:first-child {
+            margin-top: 0;
+        }
+        .sidebar-text-content h3 {
+            font-size: 1rem;
+            margin: 1.25rem 0 0.5rem 0;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--gray-medium);
+            padding-bottom: 0.15rem;
+            font-weight: 700;
+        }
+        .sidebar-text-content p {
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
+            color: var(--gray-dark);
+        }
+        .sidebar-text-content blockquote {
+            border-left: 3px solid var(--border-color);
+            padding-left: 0.75rem;
+            margin: 1rem 0;
+            font-style: italic;
+            color: #444;
+        }
+        .sidebar-text-content ul, 
+        .sidebar-text-content ol {
+            margin: 0 0 1rem 1.25rem;
+            font-size: 0.85rem;
+        }
+        .sidebar-text-content li {
+            margin-bottom: 0.35rem;
+            line-height: 1.5;
+        }
+        
+        /* Math callout boxes */
+        .formula-box {
+            border: 1px solid var(--border-color);
+            background-color: var(--gray-light);
+            padding: 0.75rem 1rem;
+            margin: 1.25rem 0;
+            overflow-x: auto;
+        }
+        .calculation-box {
+            border: 2px dashed var(--border-color);
+            background-color: #fafafa;
+            padding: 1rem;
+            margin: 1.5rem 0;
+        }
+        .calculation-box h4 {
+            text-transform: uppercase;
+            font-weight: 800;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        /* List Items in Sidebar (e.g. Question Selectors) */
+        .sidebar-list-item {
+            border: 1px solid var(--border-color);
+            padding: 0.65rem 0.85rem;
+            margin-bottom: 0.5rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            transition: all 0.15s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .sidebar-list-item:hover {
+            background-color: var(--gray-light);
+        }
+        .sidebar-list-item.active {
+            background-color: #000000;
+            color: #ffffff;
+        }
+
+        /* Visualization Panel inside Notes/Solver */
+        .vis-panel-card {
+            border: 1px solid var(--border-color);
+            background-color: white;
+            margin-top: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+        .vis-panel-header {
+            background-color: var(--gray-light);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.4rem 0.75rem;
+            font-weight: 700;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .vis-panel-body {
+            padding: 0.75rem;
+            position: relative;
+        }
+        .vis-panel-description {
+            font-size: 0.725rem;
+            color: #555;
+            margin-bottom: 0.75rem;
+            line-height: 1.4;
+        }
+
+        /* Custom 2D Vector Field canvas */
+        .vector-field-canvas {
+            width: 100%;
+            height: 250px;
+            background-color: #0d1326;
+            border: 1px solid #1e293b;
+            border-radius: 4px;
+            display: block;
+        }
+
+        /* Interactive Solver control buttons */
+        .btn-solve-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            width: 100%;
+            justify-content: center;
+            margin-top: 0.75rem;
+            padding: 0.55rem 0.85rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            border: 2px solid var(--border-color);
+            background-color: #000000;
+            color: #ffffff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-solve-action:hover {
+            background-color: transparent;
+            color: #000000;
+        }
+        
+        /* Table rendering in notes */
+        .sidebar-text-content table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.25rem 0;
+            font-size: 0.75rem;
+        }
+        .sidebar-text-content th, 
+        .sidebar-text-content td {
+            border: 1px solid var(--border-color);
+            padding: 0.4rem 0.5rem;
+            text-align: left;
+        }
+        .sidebar-text-content th {
+            background-color: var(--gray-light);
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+    </style>
 </head>
 <body>
 
-  <!-- ═══════════ Settings Modal ═══════════ -->
-  <div id="settings-overlay" class="modal-overlay hidden" role="dialog" aria-modal="true">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h2>API Configuration</h2>
-        <button id="settings-close" class="icon-btn" aria-label="Close">&times;</button>
-      </div>
-      <div class="modal-body">
-        <label for="api-key-input" class="input-label">Gemini API Key</label>
-        <p class="input-hint">Paste your key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">Google AI Studio</a>. Stored in your browser only.</p>
-        <div class="input-row">
-          <input type="password" id="api-key-input" class="text-input" placeholder="AIza..." autocomplete="off" spellcheck="false">
-          <button id="toggle-key-vis" class="icon-btn" title="Show/hide">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></svg>
-          </button>
+    <header>
+        <div class="nav-container">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <a href="#" id="nav-home" class="brand">SIMULATOR</a>
+                <div id="nav-breadcrumbs" class="nav-breadcrumbs"></div>
+            </div>
+            <div>
+                <span class="text-xs font-mono hidden sm:inline">OFFLINE MODE</span>
+            </div>
         </div>
-        <div class="modal-actions">
-          <button id="save-key-btn" class="btn-primary">Save Key</button>
-          <button id="clear-key-btn" class="btn-ghost">Clear</button>
-        </div>
-        <p id="key-status" class="key-status hidden"></p>
-      </div>
-    </div>
-  </div>
-
-  <!-- ═══════════ Toast ═══════════ -->
-  <div id="toast-container" class="toast-container"></div>
-
-  <!-- ═══════════ Screen 1 · Homescreen ═══════════ -->
-  <div id="homescreen" class="screen">
-    <header class="app-header">
-      <div class="header-left">
-        <h1 class="app-title">Course Notes</h1>
-        <span class="app-subtitle">AI Study Companion</span>
-      </div>
-      <button id="settings-btn" class="icon-btn settings-trigger" title="API Settings">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-      </button>
-    </header>
-    <main id="course-grid" class="course-grid"></main>
-  </div>
-
-  <!-- ═══════════ Screen 2 · Workspace ═══════════ -->
-  <div id="workspace" class="screen hidden">
-    <header class="app-header">
-      <div class="header-left">
-        <button id="back-btn" class="icon-btn" title="Back">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M19 12H5M5 12l7-7M5 12l7 7"/></svg>
-        </button>
-        <button id="menu-toggle-btn" class="icon-btn mobile-only-btn" title="Table of Contents">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-        </button>
-        <h1 id="workspace-title" class="app-title"></h1>
-      </div>
-      <div class="header-actions">
-        <button id="text-settings-btn" class="icon-btn" title="Reading Settings">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg>
-        </button>
-        <button id="ws-settings-btn" class="icon-btn settings-trigger" title="API Settings">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-        </button>
-      </div>
     </header>
 
-    <div class="workspace-body">
-      <!-- Sidebar Table of Contents -->
-      <aside id="sidebar-nav" class="sidebar-nav">
-        <div class="sidebar-header">Table of Contents</div>
-        <nav id="document-list" class="document-list"></nav>
-      </aside>
-
-      <!-- Main Scrollable Frame -->
-      <main class="workspace-main">
-        <!-- Reading Settings Panel -->
-        <div id="reading-settings-dropdown" class="reading-settings-dropdown hidden">
-          <div class="settings-group">
-            <span class="group-label">Font Family</span>
-            <div class="font-options">
-              <button class="font-btn active" data-font="sans">Sans</button>
-              <button class="font-btn" data-font="serif">Serif</button>
-              <button class="font-btn" data-font="mono">Mono</button>
+    <main>
+        <!-- Homescreen View -->
+        <div id="home-view" class="dashboard-grid">
+            <!-- Left: Semester Directories -->
+            <div>
+                <h2 class="section-title">Semesters & Courses</h2>
+                <div id="course-catalog">
+                    <!-- Dynamic rendering from app.js -->
+                </div>
             </div>
-          </div>
-          <div class="settings-group">
-            <span class="group-label">Text Size (<span id="font-size-val">16px</span>)</span>
-            <div class="slider-container" style="display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 6px;">
-              <span style="font-size: 11px; color: #888; user-select: none;">A-</span>
-              <input type="range" id="font-size-slider" min="12" max="26" step="1" value="16" style="flex: 1; height: 4px; border-radius: 2px; background: #eee; outline: none; cursor: pointer; accent-color: #111; -webkit-appearance: none;">
-              <span style="font-size: 15px; color: #888; user-select: none;">A+</span>
+            
+            <!-- Right: Saved runs list -->
+            <div>
+                <h2 class="section-title">Saved Simulations</h2>
+                <div id="saved-list">
+                    <!-- Dynamic rendering from IndexedDB -->
+                </div>
             </div>
-          </div>
-          <div class="settings-group">
-            <span class="group-label">Width</span>
-            <div class="width-options">
-              <button class="width-btn active" data-width="wide">Wide</button>
-              <button class="width-btn" data-width="reading">Reading</button>
-            </div>
-          </div>
         </div>
 
-        <!-- Main Scrollable Content -->
-        <main class="workspace-content" id="workspace-content">
+        <!-- Simulator View Container -->
+        <div id="sim-view" class="hidden">
+            <div class="simulator-header-bar">
+                <div class="simulator-title-text" id="sim-title">Simulator</div>
+                
+                <!-- Workspace Mode Tabs -->
+                <div class="workspace-modes-tabs" id="workspace-modes-tabs">
+                    <button class="mode-tab-btn active" id="mode-tab-sandbox">
+                        <svg class="icon" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                        <span>Sandbox</span>
+                    </button>
+                    <button class="mode-tab-btn" id="mode-tab-notes">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                        <span>Study Notes</span>
+                    </button>
+                    <button class="mode-tab-btn" id="mode-tab-tutorials">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                        <span>Tutorial Solver</span>
+                    </button>
+                </div>
 
-          <!-- Control Bar -->
-          <div class="control-bar" id="control-bar">
-            <button id="generate-btn" class="btn-primary" disabled>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px;vertical-align:-1px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              Generate Notes
-            </button>
-            <span id="cache-indicator" class="cache-badge hidden">cached</span>
-          </div>
+                <div>
+                    <button id="btn-save-sim" class="btn-minimal">Save Run</button>
+                </div>
+            </div>
+            
+            <!-- Dynamic workspace layout -->
+            <div class="workspace-layout portal-mode-sandbox" id="workspace-layout">
+                <!-- Sidebar (Notes, Tutorials, etc.) -->
+                <div class="workspace-sidebar" id="workspace-sidebar"></div>
+                
+                <!-- Viewport (Three.js Simulator Target) -->
+                <div class="workspace-viewport" id="workspace-viewport">
+                    <div id="sim-container" style="width: 100%; height: 100%;">
+                        <!-- Dynamically injected simulator view -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
 
-          <!-- Skeleton -->
-          <div id="skeleton-loader" class="skeleton-container hidden">
-            <div class="skeleton-card"><div class="skeleton-line w40"></div><div class="skeleton-line w100"></div><div class="skeleton-line w90"></div><div class="skeleton-line w70"></div><div class="skeleton-block"></div></div>
-            <div class="skeleton-card"><div class="skeleton-line w35"></div><div class="skeleton-line w100"></div><div class="skeleton-line w85"></div><div class="skeleton-block tall"></div></div>
-            <div class="skeleton-card"><div class="skeleton-line w30"></div><div class="skeleton-line w100"></div><div class="skeleton-line w60"></div><div class="skeleton-block"></div></div>
-          </div>
+    <!-- Load Local Notes & Tutorial Datasets -->
+    <script src="semester 2/Electromagnetic Theory/notes/chapter3_notes.js"></script>
+    <script src="semester 2/Electromagnetic Theory/notes/chapter4_notes.js"></script>
+    <script src="semester 2/Electromagnetic Theory/question paper/tutorial_c3.js"></script>
 
-          <!-- Loading Status -->
-          <p id="loading-status" class="loading-status hidden"></p>
+    <!-- Load Local DB Layer -->
+    <script src="system/db.js"></script>
+    <!-- Load Local App Controller -->
+    <script src="system/app.js"></script>
 
-          <!-- Document Overview -->
-          <div id="overview-section" class="overview-section hidden"></div>
-
-          <!-- Concept Map -->
-          <section id="mindmap-section" class="insight-section hidden">
-            <h2 class="section-heading">Concept Map</h2>
-            <div id="mindmap-content" class="section-body mindmap-wrap"></div>
-          </section>
-
-          <!-- Sections Container -->
-          <div id="sections-container"></div>
-
-          <!-- Extracted Images -->
-          <section id="images-section" class="insight-section hidden">
-            <h2 class="section-heading">Extracted Images</h2>
-            <div id="images-content" class="section-body image-gallery"></div>
-          </section>
-
-          <!-- Empty State -->
-          <div id="empty-state" class="empty-state">
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-            <p>Select a document and click <strong>Generate Notes</strong> to begin.</p>
-          </div>
-        </main> <!-- /workspace-content -->
-      </main> <!-- /workspace-main -->
-    </div> <!-- /workspace-body -->
-  </div> <!-- /workspace -->
-
-  <!-- ═══════════ Insights Panel (Drawer) ═══════════ -->
-  <div id="insights-backdrop" class="insights-backdrop"></div>
-  <aside id="insights-panel" class="insights-panel">
-    <div class="insights-header">
-      <h2>AI Enhancement</h2>
-      <button id="close-insights" class="icon-btn" title="Close">&times;</button>
-    </div>
-    <div id="insights-loading" class="insights-loading hidden">
-      <div class="spinner"></div>
-      <p>Generating suggestions…</p>
-    </div>
-    <div id="insights-body" class="insights-body"></div>
-  </aside>
-
-  <!-- ═══════════ Chat Panel (Drawer) ═══════════ -->
-  <div id="chat-backdrop" class="chat-backdrop"></div>
-  <aside id="chat-panel" class="chat-panel">
-    <div class="chat-header">
-      <div class="chat-header-title">
-        <h2>AI Tutor Chat</h2>
-        <span id="chat-section-title">Section Title</span>
-      </div>
-      <div class="chat-header-actions">
-        <button id="clear-chat-btn" class="icon-btn" title="Clear History">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
-        </button>
-        <button id="close-chat" class="icon-btn" title="Close">&times;</button>
-      </div>
-    </div>
-    
-    <div id="chat-messages" class="chat-messages">
-      <!-- Message bubbles go here -->
-    </div>
-
-    <div id="chat-typing" class="chat-typing hidden">
-      <div class="typing-dots">
-        <span></span><span></span><span></span>
-      </div>
-      <span class="typing-text">AI is thinking...</span>
-    </div>
-
-    <div class="chat-footer">
-      <div id="chat-quick-prompts" class="chat-quick-prompts">
-        <button class="quick-prompt-btn" data-prompt="Simplify this section">Simplify</button>
-        <button class="quick-prompt-btn" data-prompt="Explain the key equations in detail">Explain Equations</button>
-        <button class="quick-prompt-btn" data-prompt="Give me a conceptual practice question with solution">Practice Quiz</button>
-        <button class="quick-prompt-btn" data-prompt="Explain this section using a real-world analogy">Analogy</button>
-      </div>
-      <div class="chat-input-row">
-        <textarea id="chat-input" placeholder="Ask AI about this section... (Shift+Enter for new line)" rows="1"></textarea>
-        <button id="send-chat-btn" class="btn-primary" title="Send message">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-        </button>
-      </div>
-    </div>
-  </aside>
-
-  <!-- ═══════════ Lightbox ═══════════ -->
-  <div id="lightbox" class="lightbox-overlay hidden">
-    <img id="lightbox-img" src="" alt="Enlarged image">
-  </div>
-
-  <script type="module" src="app.js"></script>
 </body>
 </html>

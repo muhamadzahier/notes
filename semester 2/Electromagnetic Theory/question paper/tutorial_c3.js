@@ -1,4 +1,4 @@
-{
+window.tutorialC3 = {
   "documentTitle": "Chapter 3 Tutorial Solutions: Magnetostatics",
   "overview": "This document contains detailed, step-by-step solved solutions for all 10 practice problems in the Chapter 3 Tutorial on Magnetostatics. Each solution builds physical intuition, defines the coordinate system, derives formulas from base laws, and performs numerical calculations. Key formulas include Biot-Savart, Ampere's Law, forces on conductors, vector potentials, and self-inductance.",
   "sections": [
@@ -410,4 +410,4 @@
     }
   ],
   "mindMap": "graph TD\n  A[\"Tutorial Solutions\"] --> B[\"Q1: Semi-Infinite Wire\"]\n  A --> C[\"Q2: Triangular Loop\"]\n  A --> D[\"Q3: Circular Loop\"]\n  A --> E[\"Q4: Parallel Sheets\"]\n  A --> F[\"Q5: Toroid Field\"]\n  A --> G[\"Q6: Gauss verification\"]\n  A --> H[\"Q7: Vector Potential flux\"]\n  A --> I[\"Q8: Semicircular Forces\"]\n  A --> J[\"Q9: Radial Force work\"]\n  A --> K[\"Q10: Solenoid Inductance\"]"
-}
+};
