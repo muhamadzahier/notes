@@ -24,7 +24,8 @@
         showR: true,
         showUnitVectors: true,
         showObsMarker: true,
-        showConstants: true
+        showConstants: true,
+        showFieldLines: false
     };
     
     // Three.js Objects reference storage for dynamic updates
@@ -38,6 +39,19 @@
     let equipotentialSpheres = [];
     let gridHelper;
     let axesHelpers = [];
+
+    // Field Probe System
+    let probes = [];
+    let probeGroup = null;
+    let raycaster = null;
+    let probeClickPlane = null;
+
+    // Field Line Tracing System
+    let fieldLineGroup = null;
+
+    // Flux Surface Tool
+    let fluxSurfaces = []; // { id, type: 'sphere'|'cylinder', center, radius, length }
+    let fluxSurfaceMeshes = [];
 
     // Permanent Physical Constants
     const EPSILON_0 = 8.854e-12; // F/m
@@ -212,6 +226,94 @@
         }
     };
 
+    // ── RK4 Streamline Field Line Tracing Engine ──────────────────
+
+    function traceFieldLines(objects, fieldFn, seedRadius, maxSteps, stepSize, maxLines) {
+        const lines = [];
+        // Collect seed sources (point charges or current sources)
+        const sources = objects.filter(o => o.type === 'point' || o.type === 'current' || o.type === 'line');
+
+        sources.forEach(src => {
+            const center = new THREE.Vector3(
+                src.x !== undefined ? src.x : (src.coord1 || 0),
+                src.y !== undefined ? src.y : (src.coord2 || 0),
+                src.z || 0
+            );
+            const nSeeds = Math.min(maxLines, 12);
+
+            for (let i = 0; i < nSeeds; i++) {
+                // Distribute seeds uniformly on a small sphere around the source
+                const phi = (2 * Math.PI * i) / nSeeds;
+                const theta = Math.PI * 0.5 + (i % 2 === 0 ? 0.3 : -0.3);
+                const seed = new THREE.Vector3(
+                    center.x + seedRadius * Math.sin(theta) * Math.cos(phi),
+                    center.y + seedRadius * Math.sin(theta) * Math.sin(phi),
+                    center.z + seedRadius * Math.cos(theta)
+                );
+
+                // Trace forward and backward
+                for (let dir = -1; dir <= 1; dir += 2) {
+                    const points = [seed.clone()];
+                    let pos = seed.clone();
+
+                    for (let step = 0; step < maxSteps; step++) {
+                        // RK4 integration
+                        const k1 = fieldFn(pos, objects, dir);
+                        const p2 = pos.clone().add(k1.clone().multiplyScalar(stepSize * 0.5));
+                        const k2 = fieldFn(p2, objects, dir);
+                        const p3 = pos.clone().add(k2.clone().multiplyScalar(stepSize * 0.5));
+                        const k3 = fieldFn(p3, objects, dir);
+                        const p4 = pos.clone().add(k3.clone().multiplyScalar(stepSize));
+                        const k4 = fieldFn(p4, objects, dir);
+
+                        const delta = k1.clone().multiplyScalar(1/6)
+                            .add(k2.clone().multiplyScalar(2/6))
+                            .add(k3.clone().multiplyScalar(2/6))
+                            .add(k4.clone().multiplyScalar(1/6))
+                            .multiplyScalar(stepSize);
+
+                        pos = pos.clone().add(delta);
+
+                        // Stop conditions: too far or too close to any source
+                        if (pos.length() > 15) break;
+                        let tooClose = false;
+                        sources.forEach(s => {
+                            const sc = new THREE.Vector3(
+                                s.x !== undefined ? s.x : (s.coord1 || 0),
+                                s.y !== undefined ? s.y : (s.coord2 || 0),
+                                s.z || 0
+                            );
+                            if (pos.distanceTo(sc) < seedRadius * 0.3) tooClose = true;
+                        });
+                        if (tooClose) break;
+
+                        points.push(pos.clone());
+                    }
+
+                    if (points.length > 3) lines.push(points);
+                }
+            }
+        });
+
+        return lines;
+    }
+
+    function eFieldEvaluator(pos, objects, dir) {
+        const f = physicsEngine.calcEFieldAt(pos, objects);
+        const v = new THREE.Vector3(f.x, f.y, f.z);
+        const mag = v.length();
+        if (mag < 1e-12) return new THREE.Vector3(0, 0, 0);
+        return v.normalize().multiplyScalar(dir);
+    }
+
+    function hFieldEvaluator(pos, objects, dir) {
+        const f = physicsEngine.calcHFieldAt(pos, objects);
+        const v = new THREE.Vector3(f.x, f.y, f.z);
+        const mag = v.length();
+        if (mag < 1e-12) return new THREE.Vector3(0, 0, 0);
+        return v.normalize().multiplyScalar(dir);
+    }
+
     // Main simulator controller
     const emSimulator = {
         async init(containerEl, savedState) {
@@ -263,6 +365,8 @@
                             <button class="btn-minimal text-xs bg-white" id="btn-spawn-line">+ Line Charge</button>
                             <button class="btn-minimal text-xs bg-white" id="btn-spawn-sheet">+ Sheet Charge</button>
                             <button class="btn-minimal text-xs bg-white" id="btn-spawn-current">+ Line Current</button>
+                            <button class="btn-minimal text-xs bg-white" id="btn-gauss-sphere" style="border-color: #22c55e; color: #22c55e;">+ Gauss Sphere</button>
+                            <button class="btn-minimal text-xs bg-white" id="btn-gauss-cylinder" style="border-color: #22c55e; color: #22c55e;">+ Gauss Cylinder</button>
                         </div>
                         <div class="canvas-label-coord" id="coord-label">P: (0.0, 0.0, 2.0)</div>
                         <div id="three-canvas-target" style="width: 100%; height: 100%;"></div>
@@ -390,6 +494,11 @@
                                         <input type="checkbox" id="chk-show-const" ${toggles.showConstants ? 'checked' : ''} style="accent-color:#000;">
                                         Show Physical Constants Panel
                                     </label>
+                                    <hr class="border-gray-300">
+                                    <label class="flex items-center gap-2 text-xs font-bold font-mono cursor-pointer">
+                                        <input type="checkbox" id="chk-show-fieldlines" ${toggles.showFieldLines ? 'checked' : ''} style="accent-color:#000;">
+                                        Field Lines (RK4 Streamlines)
+                                    </label>
                                 </div>
 
                                 <div class="form-group border-t border-black pt-3">
@@ -412,6 +521,29 @@
                                     <div>μ₀ = 4π × 10⁻⁷ H/m</div>
                                     <div>k  = 1/(4πe₀) ≈ 8.988 × 10⁹</div>
                                     <div>c  ≈ 3.00 × 10⁸ m/s</div>
+                                </div>
+                            </div>
+
+                            <!-- Field Probes Panel -->
+                            <div class="sidebar-section border-t border-black">
+                                <h3 class="sidebar-section-title">Field Probes <span style="font-size: 0.65rem; font-weight: normal; opacity: 0.6;">(Double-click canvas to place)</span></h3>
+                                <div id="probes-table-container" style="max-height: 200px; overflow-y: auto;">
+                                    <table style="width: 100%; font-size: 0.65rem; font-family: monospace; border-collapse: collapse;">
+                                        <thead>
+                                            <tr style="border-bottom: 1px solid #000;">
+                                                <th style="text-align: left; padding: 2px;">#</th>
+                                                <th style="text-align: left; padding: 2px;">Pos</th>
+                                                <th style="text-align: right; padding: 2px;">|E|</th>
+                                                <th style="text-align: right; padding: 2px;">|H|</th>
+                                                <th style="text-align: right; padding: 2px;">V</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="probes-table-body"></tbody>
+                                    </table>
+                                </div>
+                                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                                    <button id="btn-export-probes" class="btn-minimal" style="flex: 1; font-size: 0.65rem; padding: 0.25rem;">Export CSV</button>
+                                    <button id="btn-clear-probes" class="btn-minimal" style="flex: 1; font-size: 0.65rem; padding: 0.25rem; border-color: #ff3b30; color: #ff3b30;">Clear All</button>
                                 </div>
                             </div>
                         </div>
@@ -485,6 +617,39 @@
             const pMat = new THREE.MeshBasicMaterial({ color: 0x000000 });
             obsPointMesh = new THREE.Mesh(pGeom, pMat);
             scene.add(obsPointMesh);
+
+            // Field Probe click-to-place system
+            probeGroup = new THREE.Group();
+            scene.add(probeGroup);
+            raycaster = new THREE.Raycaster();
+            // Invisible plane for click raycasting (facing camera)
+            const planeGeom = new THREE.PlaneGeometry(50, 50);
+            const planeMat = new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide });
+            probeClickPlane = new THREE.Mesh(planeGeom, planeMat);
+            scene.add(probeClickPlane);
+
+            renderer.domElement.addEventListener('dblclick', (event) => {
+                if (!camera || !renderer || !scene) return;
+                const rect = renderer.domElement.getBoundingClientRect();
+                const mouse = new THREE.Vector2(
+                    ((event.clientX - rect.left) / rect.width) * 2 - 1,
+                    -((event.clientY - rect.top) / rect.height) * 2 + 1
+                );
+                // Orient click plane to face camera
+                probeClickPlane.lookAt(camera.position);
+                probeClickPlane.position.set(0, 0, 0);
+                probeClickPlane.updateMatrixWorld();
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(probeClickPlane);
+                if (intersects.length > 0) {
+                    const pt = intersects[0].point;
+                    emSimulator.placeProbe(
+                        Math.round(pt.x * 10) / 10,
+                        Math.round(pt.y * 10) / 10,
+                        Math.round(pt.z * 10) / 10
+                    );
+                }
+            });
 
             window.addEventListener('resize', this.onResize);
             this.animate();
@@ -594,14 +759,25 @@
             bindToggle('chk-show-units', 'showUnitVectors');
             bindToggle('chk-show-obs', 'showObsMarker');
             bindToggle('chk-show-const', 'showConstants');
+            bindToggle('chk-show-fieldlines', 'showFieldLines');
 
             btnClear.addEventListener('click', () => {
                 if (confirm('Clear all objects from sandbox?')) {
                     spawnedObjects = [];
+                    fluxSurfaces = [];
+                    this.renderFluxSurfaces();
                     this.updateUI();
                     this.syncThreeScene();
+                    this.clearProbes();
+                    this.updatePhysics();
                 }
             });
+
+            // Field Probe buttons
+            const btnExportProbes = document.getElementById('btn-export-probes');
+            const btnClearProbes = document.getElementById('btn-clear-probes');
+            if (btnExportProbes) btnExportProbes.addEventListener('click', () => this.exportProbesCSV());
+            if (btnClearProbes) btnClearProbes.addEventListener('click', () => this.clearProbes());
 
             // Spawners
             document.getElementById('btn-spawn-point').addEventListener('click', () => {
@@ -620,6 +796,20 @@
                 this.spawnLineCurrent();
                 switchSubTab('prop');
             });
+
+            // Gauss Surface spawners
+            const btnGaussSphere = document.getElementById('btn-gauss-sphere');
+            const btnGaussCyl = document.getElementById('btn-gauss-cylinder');
+            if (btnGaussSphere) {
+                btnGaussSphere.addEventListener('click', () => {
+                    this.spawnFluxSurface('sphere');
+                });
+            }
+            if (btnGaussCyl) {
+                btnGaussCyl.addEventListener('click', () => {
+                    this.spawnFluxSurface('cylinder');
+                });
+            }
 
             // Mobile view tab toggling
             const tab3d = document.getElementById('tab-btn-3d');
@@ -794,6 +984,9 @@
                 }
             }
 
+            // Field Line Tracing (RK4 Streamlines)
+            this.renderFieldLines();
+
             this.renderMathDerivation(eField, dField, hField, bField);
         },
 
@@ -878,6 +1071,217 @@
                     }
                 }
             });
+        },
+
+        // Render RK4 streamline field lines
+        renderFieldLines() {
+            // Clear previous field lines
+            if (fieldLineGroup) {
+                fieldLineGroup.traverse((child) => {
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) child.material.dispose();
+                });
+                scene.remove(fieldLineGroup);
+                fieldLineGroup = null;
+            }
+            if (!toggles.showFieldLines) return;
+
+            const evaluator = fieldMode === 'electric' ? eFieldEvaluator : hFieldEvaluator;
+            const lineColor = fieldMode === 'electric' ? 0xef4444 : 0x3b82f6;
+            const lines = traceFieldLines(spawnedObjects, evaluator, 0.3, 200, 0.12, 12);
+
+            fieldLineGroup = new THREE.Group();
+            lines.forEach(points => {
+                if (points.length < 2) return;
+                const geom = new THREE.BufferGeometry().setFromPoints(points);
+                const mat = new THREE.LineBasicMaterial({
+                    color: lineColor,
+                    transparent: true,
+                    opacity: 0.55,
+                    linewidth: 1
+                });
+                const line = new THREE.Line(geom, mat);
+                fieldLineGroup.add(line);
+            });
+            scene.add(fieldLineGroup);
+        },
+
+        // ── Flux Surface Tool (Gauss's Law) ─────────────────────
+
+        spawnFluxSurface(type) {
+            const id = 'flux_' + Date.now();
+            const center = { x: observationPoint.x, y: observationPoint.y, z: observationPoint.z };
+            if (type === 'sphere') {
+                fluxSurfaces.push({ id, type: 'sphere', center, radius: 1.5 });
+            } else {
+                fluxSurfaces.push({ id, type: 'cylinder', center, radius: 1.0, length: 3.0 });
+            }
+            this.renderFluxSurfaces();
+            this.updatePhysics();
+        },
+
+        renderFluxSurfaces() {
+            // Clear previous meshes
+            fluxSurfaceMeshes.forEach(m => {
+                m.traverse(c => { if (c.geometry) c.geometry.dispose(); if (c.material) c.material.dispose(); });
+                scene.remove(m);
+            });
+            fluxSurfaceMeshes = [];
+
+            fluxSurfaces.forEach(surf => {
+                const group = new THREE.Group();
+                if (surf.type === 'sphere') {
+                    const geom = new THREE.SphereGeometry(surf.radius, 24, 16);
+                    const solidMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, transparent: true, opacity: 0.1, side: THREE.DoubleSide });
+                    const wireMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, wireframe: true, transparent: true, opacity: 0.3 });
+                    group.add(new THREE.Mesh(geom, solidMat));
+                    group.add(new THREE.Mesh(geom.clone(), wireMat));
+                    group.position.set(surf.center.x, surf.center.y, surf.center.z);
+                } else if (surf.type === 'cylinder') {
+                    const geom = new THREE.CylinderGeometry(surf.radius, surf.radius, surf.length, 24, 1, false);
+                    const solidMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, transparent: true, opacity: 0.1, side: THREE.DoubleSide });
+                    const wireMat = new THREE.MeshBasicMaterial({ color: 0x22c55e, wireframe: true, transparent: true, opacity: 0.3 });
+                    group.add(new THREE.Mesh(geom, solidMat));
+                    group.add(new THREE.Mesh(geom.clone(), wireMat));
+                    group.position.set(surf.center.x, surf.center.y, surf.center.z);
+                    group.rotation.x = Math.PI / 2; // Align along Z
+                }
+                scene.add(group);
+                fluxSurfaceMeshes.push(group);
+            });
+        },
+
+        computeGaussFlux(surf) {
+            // Numerical flux integration over surface patches
+            const N = 40; // discretization per dimension
+            let totalFlux = 0;
+
+            if (surf.type === 'sphere') {
+                const R = surf.radius;
+                const cx = surf.center.x, cy = surf.center.y, cz = surf.center.z;
+                for (let i = 0; i < N; i++) {
+                    const theta1 = (Math.PI * i) / N;
+                    const theta2 = (Math.PI * (i + 1)) / N;
+                    const thetaMid = (theta1 + theta2) / 2;
+                    const dTheta = theta2 - theta1;
+
+                    for (let j = 0; j < 2 * N; j++) {
+                        const phi1 = (2 * Math.PI * j) / (2 * N);
+                        const phi2 = (2 * Math.PI * (j + 1)) / (2 * N);
+                        const phiMid = (phi1 + phi2) / 2;
+                        const dPhi = phi2 - phi1;
+
+                        // Patch center
+                        const px = cx + R * Math.sin(thetaMid) * Math.cos(phiMid);
+                        const py = cy + R * Math.sin(thetaMid) * Math.sin(phiMid);
+                        const pz = cz + R * Math.cos(thetaMid);
+
+                        // Outward normal
+                        const nx = Math.sin(thetaMid) * Math.cos(phiMid);
+                        const ny = Math.sin(thetaMid) * Math.sin(phiMid);
+                        const nz = Math.cos(thetaMid);
+
+                        // Patch area dS = R^2 * sin(theta) * dTheta * dPhi
+                        const dS = R * R * Math.sin(thetaMid) * dTheta * dPhi;
+
+                        // D = eps0 * E at patch center
+                        const E = physicsEngine.calcEFieldAt({ x: px, y: py, z: pz }, spawnedObjects);
+                        const Dx = EPSILON_0 * E.x;
+                        const Dy = EPSILON_0 * E.y;
+                        const Dz = EPSILON_0 * E.z;
+
+                        // D dot n * dS
+                        totalFlux += (Dx * nx + Dy * ny + Dz * nz) * dS;
+                    }
+                }
+            } else if (surf.type === 'cylinder') {
+                const R = surf.radius;
+                const L = surf.length;
+                const cx = surf.center.x, cy = surf.center.y, cz = surf.center.z;
+                const halfL = L / 2;
+
+                // Curved surface
+                for (let i = 0; i < N; i++) {
+                    const phi1 = (2 * Math.PI * i) / N;
+                    const phi2 = (2 * Math.PI * (i + 1)) / N;
+                    const phiMid = (phi1 + phi2) / 2;
+                    const dPhi = phi2 - phi1;
+
+                    for (let j = 0; j < N; j++) {
+                        const z1 = cz - halfL + (L * j) / N;
+                        const z2 = cz - halfL + (L * (j + 1)) / N;
+                        const zMid = (z1 + z2) / 2;
+                        const dz = z2 - z1;
+
+                        const px = cx + R * Math.cos(phiMid);
+                        const py = cy + R * Math.sin(phiMid);
+
+                        const nx = Math.cos(phiMid);
+                        const ny = Math.sin(phiMid);
+
+                        const dS = R * dPhi * dz;
+
+                        const E = physicsEngine.calcEFieldAt({ x: px, y: py, z: zMid }, spawnedObjects);
+                        const Dx = EPSILON_0 * E.x;
+                        const Dy = EPSILON_0 * E.y;
+                        totalFlux += (Dx * nx + Dy * ny) * dS;
+                    }
+                }
+
+                // End caps (top and bottom)
+                for (let sign = -1; sign <= 1; sign += 2) {
+                    const zCap = cz + sign * halfL;
+                    const nz = sign;
+                    for (let i = 0; i < N; i++) {
+                        const r1 = (R * i) / N;
+                        const r2 = (R * (i + 1)) / N;
+                        const rMid = (r1 + r2) / 2;
+                        const dr = r2 - r1;
+                        for (let j = 0; j < 2 * N; j++) {
+                            const phi1 = (2 * Math.PI * j) / (2 * N);
+                            const phi2 = (2 * Math.PI * (j + 1)) / (2 * N);
+                            const phiMid = (phi1 + phi2) / 2;
+                            const dPhi = phi2 - phi1;
+
+                            const px = cx + rMid * Math.cos(phiMid);
+                            const py = cy + rMid * Math.sin(phiMid);
+
+                            const dS = rMid * dr * dPhi;
+                            const E = physicsEngine.calcEFieldAt({ x: px, y: py, z: zCap }, spawnedObjects);
+                            const Dz = EPSILON_0 * E.z;
+                            totalFlux += Dz * nz * dS;
+                        }
+                    }
+                }
+            }
+
+            // Compute Q_enclosed
+            let qEnclosed = 0;
+            spawnedObjects.forEach(obj => {
+                if (obj.type === 'point') {
+                    const dx = obj.x - surf.center.x;
+                    const dy = obj.y - surf.center.y;
+                    const dz = obj.z - surf.center.z;
+                    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                    if (surf.type === 'sphere' && dist < surf.radius) {
+                        qEnclosed += obj.q * 1e-9; // nC to C
+                    } else if (surf.type === 'cylinder') {
+                        const rho = Math.sqrt(dx*dx + dy*dy);
+                        const zDist = Math.abs(obj.z - surf.center.z);
+                        if (rho < surf.radius && zDist < surf.length / 2) {
+                            qEnclosed += obj.q * 1e-9;
+                        }
+                    }
+                }
+            });
+
+            return { flux: totalFlux, qEnclosed };
+        },
+
+        removeFluxSurface(id) {
+            fluxSurfaces = fluxSurfaces.filter(s => s.id !== id);
+            this.renderFluxSurfaces();
+            this.updatePhysics();
         },
 
         spawnPointCharge() {
@@ -978,6 +1382,7 @@
             spawnedObjects = spawnedObjects.filter(o => o.id !== id);
             emSimulator.updateUI();
             emSimulator.syncThreeScene();
+            emSimulator.updatePhysics();
         },
 
         updateObject(id, key, value) {
@@ -1476,6 +1881,24 @@
                 }
             }
 
+            // Gauss's Law Flux Surface Results
+            if (fluxSurfaces.length > 0) {
+                html += '<hr style="margin: 0.75rem 0;">';
+                html += '<h4 style="font-size: 0.75rem; text-transform: uppercase; font-weight: 800; margin-bottom: 0.5rem;">Gauss\'s Law — Flux Surfaces</h4>';
+                fluxSurfaces.forEach((surf, idx) => {
+                    const result = this.computeGaussFlux(surf);
+                    const match = Math.abs(result.flux - result.qEnclosed) < Math.abs(result.qEnclosed) * 0.1 + 1e-15;
+                    const checkmark = match ? '\u2705' : '\u274C';
+                    html += `<div style="border: 1px solid #22c55e; padding: 0.5rem; margin: 0.5rem 0; font-size: 0.75rem; background: #f0fdf4;">`;
+                    html += `<div style="font-weight: 700;">Surface #${idx + 1}: ${surf.type} (r=${surf.radius.toFixed(1)})</div>`;
+                    html += `<div class="katex-render">\\Phi_{\\text{numerical}} = \\oiint \\mathbf{D} \\cdot d\\mathbf{S} = ${result.flux.toExponential(3)} \\text{ C}</div>`;
+                    html += `<div class="katex-render">Q_{\\text{enclosed}} = ${result.qEnclosed.toExponential(3)} \\text{ C}</div>`;
+                    html += `<div style="font-weight: 700; color: ${match ? '#16a34a' : '#dc2626'};">${checkmark} Gauss's Law: Φ = Q_enc ${match ? '✓ Verified' : '(mismatch)'}</div>`;
+                    html += `<button onclick="window.appController && window.appController.activeSimulator && window.appController.activeSimulator.removeFluxSurface('${surf.id}')" style="font-size: 0.6rem; border: 1px solid #dc2626; color: #dc2626; background: none; cursor: pointer; padding: 0.1rem 0.3rem; margin-top: 0.25rem;">Remove</button>`;
+                    html += '</div>';
+                });
+            }
+
             out.innerHTML = html;
 
             const renders = out.querySelectorAll('.katex-render');
@@ -1494,8 +1917,114 @@
                 observationPoint,
                 spawnedObjects,
                 fieldMode,
-                toggles
+                toggles,
+                fluxSurfaces
             };
+        },
+
+        placeProbe(x, y, z) {
+            if (!scene || !probeGroup) return;
+            const probe = {
+                id: probes.length + 1,
+                x, y, z,
+                mesh: null,
+                label: null
+            };
+
+            // Small sphere marker
+            const geom = new THREE.SphereGeometry(0.06, 8, 8);
+            const mat = new THREE.MeshBasicMaterial({ color: 0xff6600 });
+            probe.mesh = new THREE.Mesh(geom, mat);
+            probe.mesh.position.set(x, y, z);
+            probeGroup.add(probe.mesh);
+
+            // Compute fields at probe location
+            const p = { x, y, z };
+            const eField = physicsEngine.calcEFieldAt(p, spawnedObjects);
+            const hField = physicsEngine.calcHFieldAt(p, spawnedObjects);
+            const vVal = physicsEngine.calcPotentialAt(p, spawnedObjects);
+            const eMag = Math.sqrt(eField.x*eField.x + eField.y*eField.y + eField.z*eField.z);
+            const hMag = Math.sqrt(hField.x*hField.x + hField.y*hField.y + hField.z*hField.z);
+
+            probe.eMag = eMag;
+            probe.hMag = hMag;
+            probe.vVal = vVal;
+
+            // Canvas-based text label sprite
+            const labelCanvas = document.createElement('canvas');
+            labelCanvas.width = 256;
+            labelCanvas.height = 64;
+            const lctx = labelCanvas.getContext('2d');
+            lctx.fillStyle = 'rgba(0,0,0,0.75)';
+            lctx.fillRect(0, 0, 256, 64);
+            lctx.fillStyle = '#ffffff';
+            lctx.font = 'bold 14px monospace';
+            lctx.fillText(`P${probe.id} (${x},${y},${z})`, 4, 16);
+            lctx.font = '11px monospace';
+            lctx.fillStyle = '#ff6600';
+            lctx.fillText(`|E|=${eMag.toExponential(2)} V/m`, 4, 34);
+            lctx.fillStyle = '#66aaff';
+            lctx.fillText(`|H|=${hMag.toExponential(2)} A/m`, 4, 50);
+
+            const texture = new THREE.CanvasTexture(labelCanvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture, depthTest: false });
+            probe.label = new THREE.Sprite(spriteMat);
+            probe.label.position.set(x + 0.15, y + 0.15, z + 0.15);
+            probe.label.scale.set(1.2, 0.3, 1);
+            probeGroup.add(probe.label);
+
+            probes.push(probe);
+            this.renderProbesTable();
+        },
+
+        clearProbes() {
+            if (probeGroup) {
+                probeGroup.traverse((child) => {
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) {
+                        if (child.material.map) child.material.map.dispose();
+                        child.material.dispose();
+                    }
+                });
+                while (probeGroup.children.length > 0) {
+                    probeGroup.remove(probeGroup.children[0]);
+                }
+            }
+            probes = [];
+            this.renderProbesTable();
+        },
+
+        renderProbesTable() {
+            const tbody = document.getElementById('probes-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            probes.forEach((p) => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid #ddd';
+                tr.innerHTML = `
+                    <td style="padding: 2px;">${p.id}</td>
+                    <td style="padding: 2px;">(${p.x},${p.y},${p.z})</td>
+                    <td style="text-align: right; padding: 2px;">${p.eMag.toExponential(2)}</td>
+                    <td style="text-align: right; padding: 2px;">${p.hMag.toExponential(2)}</td>
+                    <td style="text-align: right; padding: 2px;">${p.vVal.toFixed(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        },
+
+        exportProbesCSV() {
+            if (probes.length === 0) { alert('No probes to export.'); return; }
+            let csv = 'Probe,X,Y,Z,|E| (V/m),|H| (A/m),V (Volts)\n';
+            probes.forEach(p => {
+                csv += `${p.id},${p.x},${p.y},${p.z},${p.eMag.toExponential(4)},${p.hMag.toExponential(4)},${p.vVal.toFixed(4)}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'field_probes.csv';
+            a.click();
+            URL.revokeObjectURL(url);
         },
 
         destroy() {
@@ -1508,6 +2037,16 @@
                 window.removeEventListener('resize', this.mobileViewListener);
             }
             if (controls) controls.dispose();
+            // Traverse scene and dispose all GPU resources to prevent WebGL memory leaks
+            if (scene) {
+                scene.traverse((object) => {
+                    if (object.geometry) object.geometry.dispose();
+                    if (object.material) {
+                        const mats = Array.isArray(object.material) ? object.material : [object.material];
+                        mats.forEach(m => { if (m.map) m.map.dispose(); m.dispose(); });
+                    }
+                });
+            }
             if (renderer) {
                 renderer.dispose();
                 if (renderer.domElement && renderer.domElement.parentNode) {
@@ -1518,6 +2057,13 @@
             camera = null;
             renderer = null;
             controls = null;
+            probes = [];
+            probeGroup = null;
+            raycaster = null;
+            probeClickPlane = null;
+            fieldLineGroup = null;
+            fluxSurfaces = [];
+            fluxSurfaceMeshes = [];
         }
     };
 

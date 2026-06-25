@@ -21,6 +21,7 @@
     let vectorArrow = null;
     let coordinateShelGroup = null;
     let unitVectorGroup = null;
+    let gridHelper;
 
     // Helper: Parse LaTeX formulas
     function renderMarkdownWithKaTeX(text) {
@@ -614,6 +615,16 @@
                 window.removeEventListener('resize', coordinateToolkit.mobileViewListener);
             }
             if (controls) controls.dispose();
+            // Traverse scene and dispose all GPU resources to prevent WebGL memory leaks
+            if (scene) {
+                scene.traverse((object) => {
+                    if (object.geometry) object.geometry.dispose();
+                    if (object.material) {
+                        const mats = Array.isArray(object.material) ? object.material : [object.material];
+                        mats.forEach(m => { if (m.map) m.map.dispose(); m.dispose(); });
+                    }
+                });
+            }
             if (renderer) {
                 renderer.dispose();
                 if (renderer.domElement && renderer.domElement.parentNode) {

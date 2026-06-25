@@ -34,6 +34,17 @@
     let dbArrow = null;
     let wireMeshGroup = null;
     let AmperianLoopMesh = null;
+    let gridHelper;
+
+    // Field Probe System
+    let probes = [];
+    let probeGroup = null;
+    let raycaster = null;
+    let probeClickPlane = null;
+
+    // Field Line Tracing
+    let fieldLineGroup = null;
+    let showFieldLines = false;
 
     // Helper: Parse LaTeX formulas
     function renderMarkdownWithKaTeX(text) {
@@ -170,6 +181,68 @@
         }
     };
 
+    // ── RK4 Streamline Field Line Tracing (Magnetostatics) ─────────
+
+    function magFieldEvaluator(pos, objects, dir) {
+        const { H } = physicsEngine.calcHFieldBiotSavart(
+            { x: pos.x, y: pos.y, z: pos.z }, objects
+        );
+        const mag = H.length();
+        if (mag < 1e-12) return new THREE.Vector3(0, 0, 0);
+        return H.clone().normalize().multiplyScalar(dir);
+    }
+
+    function traceMagFieldLines(objects, maxSteps, stepSize) {
+        const lines = [];
+        const sources = objects.filter(o => ['finite_wire', 'circular_loop', 'triangular_loop'].includes(o.type));
+
+        sources.forEach(src => {
+            let center = new THREE.Vector3(src.x || 0, src.y || 0, (src.z1 + src.z2) / 2 || 0);
+            if (src.type === 'circular_loop') {
+                center.set(0, 0, src.zOffset || 0);
+            } else if (src.type === 'triangular_loop') {
+                center.set(0, 0, src.zOffset || 0);
+            }
+
+            const nSeeds = 8;
+            const seedRadius = 0.4;
+            for (let i = 0; i < nSeeds; i++) {
+                const phi = (2 * Math.PI * i) / nSeeds;
+                const seed = new THREE.Vector3(
+                    center.x + seedRadius * Math.cos(phi),
+                    center.y + seedRadius * Math.sin(phi),
+                    center.z + seedRadius * 0.3 * (i % 2 === 0 ? 1 : -1)
+                );
+
+                for (let dir = -1; dir <= 1; dir += 2) {
+                    const points = [seed.clone()];
+                    let pos = seed.clone();
+                    for (let step = 0; step < maxSteps; step++) {
+                        const k1 = magFieldEvaluator(pos, objects, dir);
+                        const p2 = pos.clone().add(k1.clone().multiplyScalar(stepSize * 0.5));
+                        const k2 = magFieldEvaluator(p2, objects, dir);
+                        const p3 = pos.clone().add(k2.clone().multiplyScalar(stepSize * 0.5));
+                        const k3 = magFieldEvaluator(p3, objects, dir);
+                        const p4 = pos.clone().add(k3.clone().multiplyScalar(stepSize));
+                        const k4 = magFieldEvaluator(p4, objects, dir);
+
+                        const delta = k1.clone().multiplyScalar(1/6)
+                            .add(k2.clone().multiplyScalar(2/6))
+                            .add(k3.clone().multiplyScalar(2/6))
+                            .add(k4.clone().multiplyScalar(1/6))
+                            .multiplyScalar(stepSize);
+
+                        pos = pos.clone().add(delta);
+                        if (pos.length() > 12) break;
+                        points.push(pos.clone());
+                    }
+                    if (points.length > 3) lines.push(points);
+                }
+            }
+        });
+        return lines;
+    }
+
     // Main simulator object
     const magnetostaticsSimulator = {
         async init(containerEl, savedState) {
@@ -298,8 +371,36 @@
                                         <option value="copper">Copper Core (μ_r ≈ 1)</option>
                                     </select>
                                 </div>
+                                <div style="margin-top: 0.75rem;">
+                                    <label class="flex items-center gap-2 text-xs font-bold font-mono cursor-pointer">
+                                        <input type="checkbox" id="chk-show-fieldlines" ${showFieldLines ? 'checked' : ''} style="accent-color:#000;">
+                                        Field Lines (RK4 Streamlines)
+                                    </label>
+                                </div>
                                 <div style="margin-top: 1rem;">
                                     <button id="btn-clear-scene" class="btn-minimal text-xs w-full" style="width: 100%; border-color: #ff3b30; color: #ff3b30;">Clear Sandbox</button>
+                                </div>
+                            </div>
+
+                            <!-- Field Probes Panel -->
+                            <div class="sidebar-section border-t border-black">
+                                <h3 class="sidebar-section-title">Field Probes <span style="font-size: 0.65rem; font-weight: normal; opacity: 0.6;">(Double-click canvas to place)</span></h3>
+                                <div id="probes-table-container" style="max-height: 200px; overflow-y: auto;">
+                                    <table style="width: 100%; font-size: 0.65rem; font-family: monospace; border-collapse: collapse;">
+                                        <thead>
+                                            <tr style="border-bottom: 1px solid #000;">
+                                                <th style="text-align: left; padding: 2px;">#</th>
+                                                <th style="text-align: left; padding: 2px;">Pos</th>
+                                                <th style="text-align: right; padding: 2px;">|H|</th>
+                                                <th style="text-align: right; padding: 2px;">|B|</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="probes-table-body"></tbody>
+                                    </table>
+                                </div>
+                                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                                    <button id="btn-export-probes" class="btn-minimal" style="flex: 1; font-size: 0.65rem; padding: 0.25rem;">Export CSV</button>
+                                    <button id="btn-clear-probes" class="btn-minimal" style="flex: 1; font-size: 0.65rem; padding: 0.25rem; border-color: #ff3b30; color: #ff3b30;">Clear All</button>
                                 </div>
                             </div>
                         </div>
@@ -357,6 +458,37 @@
 
             wireMeshGroup = new THREE.Group();
             scene.add(wireMeshGroup);
+
+            // Field Probe click-to-place system
+            probeGroup = new THREE.Group();
+            scene.add(probeGroup);
+            raycaster = new THREE.Raycaster();
+            const planeGeom = new THREE.PlaneGeometry(50, 50);
+            const planeMat = new THREE.MeshBasicMaterial({ visible: false, side: THREE.DoubleSide });
+            probeClickPlane = new THREE.Mesh(planeGeom, planeMat);
+            scene.add(probeClickPlane);
+
+            renderer.domElement.addEventListener('dblclick', (event) => {
+                if (!camera || !renderer || !scene) return;
+                const rect = renderer.domElement.getBoundingClientRect();
+                const mouse = new THREE.Vector2(
+                    ((event.clientX - rect.left) / rect.width) * 2 - 1,
+                    -((event.clientY - rect.top) / rect.height) * 2 + 1
+                );
+                probeClickPlane.lookAt(camera.position);
+                probeClickPlane.position.set(0, 0, 0);
+                probeClickPlane.updateMatrixWorld();
+                raycaster.setFromCamera(mouse, camera);
+                const intersects = raycaster.intersectObject(probeClickPlane);
+                if (intersects.length > 0) {
+                    const pt = intersects[0].point;
+                    magnetostaticsSimulator.placeProbe(
+                        Math.round(pt.x * 10) / 10,
+                        Math.round(pt.y * 10) / 10,
+                        Math.round(pt.z * 10) / 10
+                    );
+                }
+            });
 
             window.addEventListener('resize', this.onResize);
             this.animate();
@@ -435,13 +567,29 @@
                 this.updatePhysics();
             });
 
+            // Field lines toggle
+            const chkFieldLines = document.getElementById('chk-show-fieldlines');
+            if (chkFieldLines) {
+                chkFieldLines.addEventListener('change', (e) => {
+                    showFieldLines = e.target.checked;
+                    this.updatePhysics();
+                });
+            }
+
             btnClear.addEventListener('click', () => {
                 if (confirm('Clear sandbox?')) {
                     spawnedObjects = [];
                     this.updateUI();
                     this.syncThreeScene();
+                    this.clearProbes();
                 }
             });
+
+            // Field Probe buttons
+            const btnExportProbes = document.getElementById('btn-export-probes');
+            const btnClearProbes = document.getElementById('btn-clear-probes');
+            if (btnExportProbes) btnExportProbes.addEventListener('click', () => this.exportProbesCSV());
+            if (btnClearProbes) btnClearProbes.addEventListener('click', () => this.clearProbes());
 
             // Geometries Spawners
             document.getElementById('btn-spawn-finite-wire').addEventListener('click', () => {
@@ -553,13 +701,28 @@
         },
 
         updatePhysics() {
-            // Remove arrows
-            if (fieldArrowH) { scene.remove(fieldArrowH); fieldArrowH = null; }
-            if (fieldArrowB) { scene.remove(fieldArrowB); fieldArrowB = null; }
-            if (dlArrow) { scene.remove(dlArrow); dlArrow = null; }
-            if (rArrow) { scene.remove(rArrow); rArrow = null; }
-            if (dbArrow) { scene.remove(dbArrow); dbArrow = null; }
-            if (AmperianLoopMesh) { scene.remove(AmperianLoopMesh); AmperianLoopMesh = null; }
+            // Helper: dispose ArrowHelper sub-objects to prevent GPU memory leaks
+            function disposeArrow(arrow) {
+                if (!arrow) return;
+                arrow.traverse((child) => {
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) child.material.dispose();
+                });
+                scene.remove(arrow);
+            }
+            // Remove and dispose arrows
+            disposeArrow(fieldArrowH); fieldArrowH = null;
+            disposeArrow(fieldArrowB); fieldArrowB = null;
+            disposeArrow(dlArrow); dlArrow = null;
+            disposeArrow(rArrow); rArrow = null;
+            disposeArrow(dbArrow); dbArrow = null;
+            if (AmperianLoopMesh) {
+                AmperianLoopMesh.traverse((child) => {
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) child.material.dispose();
+                });
+                scene.remove(AmperianLoopMesh); AmperianLoopMesh = null;
+            }
 
             // Split spawned objects into Biot-Savart vs Ampere
             const BSObjects = spawnedObjects.filter(o => ['finite_wire', 'circular_loop', 'triangular_loop'].includes(o.type));
@@ -619,10 +782,37 @@
                 }
             });
 
+            // Field line rendering
+            this.renderFieldLines();
+
             this.renderMathDerivation(H_net, B_net, closestSeg);
         },
 
         spawnPointCharge() {}, // Unused in magnetostatics
+
+        renderFieldLines() {
+            if (fieldLineGroup) {
+                fieldLineGroup.traverse((child) => {
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) child.material.dispose();
+                });
+                scene.remove(fieldLineGroup);
+                fieldLineGroup = null;
+            }
+            if (!showFieldLines) return;
+
+            const BSObjects = spawnedObjects.filter(o => ['finite_wire', 'circular_loop', 'triangular_loop'].includes(o.type));
+            const lines = traceMagFieldLines(BSObjects, 150, 0.1);
+
+            fieldLineGroup = new THREE.Group();
+            lines.forEach(points => {
+                if (points.length < 2) return;
+                const geom = new THREE.BufferGeometry().setFromPoints(points);
+                const mat = new THREE.LineBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.5 });
+                fieldLineGroup.add(new THREE.Line(geom, mat));
+            });
+            scene.add(fieldLineGroup);
+        },
         deleteElement(id) {
             spawnedObjects = spawnedObjects.filter(o => o.id !== id);
             this.updateUI();
@@ -929,6 +1119,102 @@
             };
         },
 
+        placeProbe(x, y, z) {
+            if (!scene || !probeGroup) return;
+            const probe = { id: probes.length + 1, x, y, z, mesh: null, label: null };
+
+            const geom = new THREE.SphereGeometry(0.06, 8, 8);
+            const mat = new THREE.MeshBasicMaterial({ color: 0xff6600 });
+            probe.mesh = new THREE.Mesh(geom, mat);
+            probe.mesh.position.set(x, y, z);
+            probeGroup.add(probe.mesh);
+
+            const p = { x, y, z };
+            const BSObjects = spawnedObjects.filter(o => ['finite_wire', 'circular_loop', 'triangular_loop'].includes(o.type));
+            const AmpObjects = spawnedObjects.filter(o => ['toroid', 'solenoid'].includes(o.type));
+            const { H: H_BS } = physicsEngine.calcHFieldBiotSavart(p, BSObjects);
+            const H_Amp = physicsEngine.calcAmpereLaw(p, AmpObjects);
+            const H_net = new THREE.Vector3().addVectors(H_BS, H_Amp);
+            const B_net = H_net.clone().multiplyScalar(MU_0 * (materials[activeMaterial]?.mur || 1.0));
+            const hMag = H_net.length();
+            const bMag = B_net.length();
+
+            probe.hMag = hMag;
+            probe.bMag = bMag;
+
+            const labelCanvas = document.createElement('canvas');
+            labelCanvas.width = 256;
+            labelCanvas.height = 64;
+            const lctx = labelCanvas.getContext('2d');
+            lctx.fillStyle = 'rgba(0,0,0,0.75)';
+            lctx.fillRect(0, 0, 256, 64);
+            lctx.fillStyle = '#ffffff';
+            lctx.font = 'bold 14px monospace';
+            lctx.fillText(`P${probe.id} (${x},${y},${z})`, 4, 16);
+            lctx.font = '11px monospace';
+            lctx.fillStyle = '#66aaff';
+            lctx.fillText(`|H|=${hMag.toExponential(2)} A/m`, 4, 34);
+            lctx.fillStyle = '#ff6600';
+            lctx.fillText(`|B|=${bMag.toExponential(2)} T`, 4, 50);
+
+            const texture = new THREE.CanvasTexture(labelCanvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture, depthTest: false });
+            probe.label = new THREE.Sprite(spriteMat);
+            probe.label.position.set(x + 0.15, y + 0.15, z + 0.15);
+            probe.label.scale.set(1.2, 0.3, 1);
+            probeGroup.add(probe.label);
+
+            probes.push(probe);
+            this.renderProbesTable();
+        },
+
+        clearProbes() {
+            if (probeGroup) {
+                probeGroup.traverse((child) => {
+                    if (child.geometry) child.geometry.dispose();
+                    if (child.material) {
+                        if (child.material.map) child.material.map.dispose();
+                        child.material.dispose();
+                    }
+                });
+                while (probeGroup.children.length > 0) probeGroup.remove(probeGroup.children[0]);
+            }
+            probes = [];
+            this.renderProbesTable();
+        },
+
+        renderProbesTable() {
+            const tbody = document.getElementById('probes-table-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+            probes.forEach((p) => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid #ddd';
+                tr.innerHTML = `
+                    <td style="padding: 2px;">${p.id}</td>
+                    <td style="padding: 2px;">(${p.x},${p.y},${p.z})</td>
+                    <td style="text-align: right; padding: 2px;">${p.hMag.toExponential(2)}</td>
+                    <td style="text-align: right; padding: 2px;">${p.bMag.toExponential(2)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        },
+
+        exportProbesCSV() {
+            if (probes.length === 0) { alert('No probes to export.'); return; }
+            let csv = 'Probe,X,Y,Z,|H| (A/m),|B| (T)\n';
+            probes.forEach(p => {
+                csv += `${p.id},${p.x},${p.y},${p.z},${p.hMag.toExponential(4)},${p.bMag.toExponential(4)}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'field_probes.csv';
+            a.click();
+            URL.revokeObjectURL(url);
+        },
+
         destroy() {
             if (animationFrameId !== null) {
                 cancelAnimationFrame(animationFrameId);
@@ -939,6 +1225,16 @@
                 window.removeEventListener('resize', this.mobileViewListener);
             }
             if (controls) controls.dispose();
+            // Traverse scene and dispose all GPU resources to prevent WebGL memory leaks
+            if (scene) {
+                scene.traverse((object) => {
+                    if (object.geometry) object.geometry.dispose();
+                    if (object.material) {
+                        const mats = Array.isArray(object.material) ? object.material : [object.material];
+                        mats.forEach(m => { if (m.map) m.map.dispose(); m.dispose(); });
+                    }
+                });
+            }
             if (renderer) {
                 renderer.dispose();
                 if (renderer.domElement && renderer.domElement.parentNode) {
@@ -949,6 +1245,12 @@
             camera = null;
             renderer = null;
             controls = null;
+            probes = [];
+            probeGroup = null;
+            raycaster = null;
+            probeClickPlane = null;
+            fieldLineGroup = null;
+            showFieldLines = false;
         }
     };
 

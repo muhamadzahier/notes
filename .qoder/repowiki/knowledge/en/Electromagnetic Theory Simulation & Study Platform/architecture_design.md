@@ -1,0 +1,5 @@
+- **Entry Point**: `index.html` serves as the single-page application shell, loading core system scripts (`system/db.js`, `system/app.js`) and domain-specific data modules.
+- **Controller Layer**: `system/app.js` implements `AppController`, managing view routing (Home vs. Simulator), dynamic module injection via `loadScript`, and workspace mode switching (Sandbox, Notes, Tutorial).
+- **Persistence Layer**: `system/db.js` provides a `dbService` wrapper around IndexedDB for offline storage of simulation states and custom diagram blocks.
+- **Simulation Portal**: `semester 2/Electromagnetic Theory/em_sandbox_portal.js` acts as a facade for the Electromagnetic Theory course, dynamically loading sub-modules (Electrostatics, Magnetostatics, Faraday's Law) into a shared Three.js viewport.
+- **Utility Module**: `system/block_diagram_builder.js` is a standalone, self-contained circuit/system mapping tool that adheres to the `activeSimulator` interface contract (`init`, `getState`, `destroy`).

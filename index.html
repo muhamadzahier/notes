@@ -515,6 +515,23 @@
             display: none !important;
         }
 
+        /* Layout modes toggles */
+        .workspace-layout.layout-sidebar-only .workspace-viewport {
+            display: none !important;
+        }
+        .workspace-layout.layout-sidebar-only .workspace-sidebar {
+            width: 100% !important;
+            max-width: none !important;
+            border-right: none !important;
+        }
+
+        .workspace-layout.layout-viewport-only .workspace-sidebar {
+            display: none !important;
+        }
+        .workspace-layout.layout-viewport-only .workspace-viewport {
+            width: 100% !important;
+        }
+
         /* Workspace Sidebar Content Styling */
         .workspace-sidebar-header {
             border-bottom: 2px solid var(--border-color);
@@ -757,6 +774,137 @@
             font-weight: 700;
             text-transform: uppercase;
         }
+
+        /* Command Palette (Ctrl+K) */
+        .cmd-palette-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            padding-top: 15vh;
+            animation: cmd-fade-in 0.12s ease-out;
+        }
+        @keyframes cmd-fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .cmd-palette {
+            width: 520px;
+            max-width: 95vw;
+            max-height: 450px;
+            background: white;
+            border: 2px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        .cmd-palette-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            border-bottom: 2px solid var(--border-color);
+            outline: none;
+            font-family: inherit;
+        }
+        .cmd-palette-results {
+            overflow-y: auto;
+            flex: 1;
+        }
+        .cmd-palette-item {
+            padding: 0.6rem 1rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--gray-medium);
+            font-size: 0.8rem;
+        }
+        .cmd-palette-item:hover,
+        .cmd-palette-item.selected {
+            background-color: var(--hover-bg);
+            color: var(--hover-text);
+        }
+        .cmd-badge {
+            font-size: 0.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            padding: 0.1rem 0.4rem;
+            border: 1px solid currentColor;
+            letter-spacing: 0.05em;
+            flex-shrink: 0;
+        }
+        .cmd-hint {
+            font-size: 0.7rem;
+            opacity: 0.6;
+            margin-left: auto;
+        }
+        .cmd-empty {
+            padding: 1.5rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        /* Toast Notification */
+        .toast-notification {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            background: #000;
+            color: #fff;
+            padding: 0.75rem 1.25rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            z-index: 10000;
+            animation: toast-slide-in 0.3s ease-out, toast-fade-out 0.3s ease-in 2.7s forwards;
+            max-width: 350px;
+        }
+        @keyframes toast-slide-in {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes toast-fade-out {
+            to { opacity: 0; transform: translateY(10px); }
+        }
+
+        /* Sandbox link pill button */
+        .sandbox-link-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.2rem 0.6rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            border: 1px solid var(--border-color);
+            background: var(--gray-light);
+            cursor: pointer;
+            transition: all 0.15s;
+            margin: 0.25rem 0;
+        }
+        .sandbox-link-pill:hover {
+            background: #000;
+            color: #fff;
+        }
+
+        /* Related Notes button */
+        .btn-related-notes {
+            font-size: 0.65rem;
+            padding: 0.2rem 0.5rem;
+            border: 1px solid #000;
+            background: transparent;
+            cursor: pointer;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .btn-related-notes:hover {
+            background: #000;
+            color: #fff;
+        }
     </style>
 </head>
 <body>
@@ -812,9 +960,24 @@
                         <svg class="icon" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                         <span>Tutorial Solver</span>
                     </button>
+                    <button class="mode-tab-btn" id="mode-tab-quiz">
+                        <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                        <span>Quiz</span>
+                    </button>
                 </div>
 
-                <div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <div class="workspace-modes-tabs" id="layout-toggle-container" style="margin: 0; display: none;">
+                        <button class="mode-tab-btn active" id="btn-layout-split" title="Split View">
+                            <span style="font-size: 0.75rem;">🔲 Split</span>
+                        </button>
+                        <button class="mode-tab-btn" id="btn-layout-sidebar" title="Show Content Only">
+                            <span style="font-size: 0.75rem;">📖 Content</span>
+                        </button>
+                        <button class="mode-tab-btn" id="btn-layout-viewport" title="Show Sim Only">
+                            <span style="font-size: 0.75rem;">🎮 Sim</span>
+                        </button>
+                    </div>
                     <button id="btn-save-sim" class="btn-minimal">Save Run</button>
                 </div>
             </div>
@@ -833,6 +996,14 @@
             </div>
         </div>
     </main>
+
+    <!-- Command Palette Modal (Ctrl+K) -->
+    <div id="cmd-palette-overlay" class="cmd-palette-overlay" style="display: none;">
+        <div class="cmd-palette">
+            <input type="text" id="cmd-palette-input" class="cmd-palette-input" placeholder="Search notes, tutorials, simulators... (Esc to close)">
+            <div id="cmd-palette-results" class="cmd-palette-results"></div>
+        </div>
+    </div>
 
     <!-- Load Local Notes & Tutorial Datasets -->
     <script src="semester 2/Electromagnetic Theory/notes/chapter3_notes.js"></script>

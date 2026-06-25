@@ -1,7 +1,8 @@
 const DB_NAME = 'AcademicSimulationsDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_NAME = 'simulations';
 const BLOCKS_STORE_NAME = 'custom_blocks';
+const PROGRESS_STORE_NAME = 'progress';
 
 function openDB() {
     return new Promise((resolve, reject) => {
@@ -16,6 +17,10 @@ function openDB() {
             }
             if (!db.objectStoreNames.contains(BLOCKS_STORE_NAME)) {
                 db.createObjectStore(BLOCKS_STORE_NAME, { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains(PROGRESS_STORE_NAME)) {
+                const progressStore = db.createObjectStore(PROGRESS_STORE_NAME, { keyPath: 'id' });
+                progressStore.createIndex('courseId', 'courseId', { unique: false });
             }
         };
     });
@@ -113,6 +118,50 @@ const dbService = {
             const store = transaction.objectStore(BLOCKS_STORE_NAME);
             const request = store.delete(id);
             request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    },
+
+    // ── Progress Tracking ──────────────────────────────────────────
+
+    async saveProgress(id, courseId, chapterKey, sectionIdx, bookmarks) {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(PROGRESS_STORE_NAME, 'readwrite');
+            const store = transaction.objectStore(PROGRESS_STORE_NAME);
+            const data = {
+                id,
+                courseId,
+                chapterKey,
+                sectionIdx,
+                bookmarks: bookmarks || [],
+                lastViewedTimestamp: Date.now()
+            };
+            const request = store.put(data);
+            request.onsuccess = () => resolve(data);
+            request.onerror = () => reject(request.error);
+        });
+    },
+
+    async getProgress(courseId) {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(PROGRESS_STORE_NAME, 'readonly');
+            const store = transaction.objectStore(PROGRESS_STORE_NAME);
+            const index = store.index('courseId');
+            const request = index.getAll(courseId);
+            request.onsuccess = () => resolve(request.result || []);
+            request.onerror = () => reject(request.error);
+        });
+    },
+
+    async getProgressById(id) {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            const transaction = db.transaction(PROGRESS_STORE_NAME, 'readonly');
+            const store = transaction.objectStore(PROGRESS_STORE_NAME);
+            const request = store.get(id);
+            request.onsuccess = () => resolve(request.result || null);
             request.onerror = () => reject(request.error);
         });
     }

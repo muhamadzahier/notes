@@ -1,0 +1,1 @@
+A client-side academic portal integrating 3D physics simulations, interactive study notes, and tutorial solvers for electromagnetic theory courses.

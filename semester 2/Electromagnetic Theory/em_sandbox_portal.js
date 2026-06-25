@@ -105,6 +105,18 @@
                 tabsContainer.appendChild(btn);
             });
 
+            // Related Notes cross-link button
+            const relatedBtn = document.createElement('button');
+            relatedBtn.className = 'btn-related-notes';
+            relatedBtn.id = 'btn-related-notes';
+            relatedBtn.innerText = '\u{1F4D6} Related Notes';
+            relatedBtn.addEventListener('click', () => {
+                if (window.appController && typeof window.appController.navigateToRelatedNotes === 'function') {
+                    window.appController.navigateToRelatedNotes(activeTopic);
+                }
+            });
+            tabsContainer.appendChild(relatedBtn);
+
             // Insert header tabs before the save button division
             headerBar.insertBefore(tabsContainer, headerBar.lastElementChild);
 
@@ -214,6 +226,11 @@
                 activeSubModule.deleteElement(id);
             }
         },
+        removeFluxSurface(id) {
+            if (activeSubModule && activeSubModule.removeFluxSurface) {
+                activeSubModule.removeFluxSurface(id);
+            }
+        },
 
         getState() {
             return {
@@ -232,7 +249,19 @@
             if (activeSubModule && activeSubModule.destroy) {
                 activeSubModule.destroy();
             }
+
+            // Remove stale named module globals to prevent dangling references
+            Object.values(TOPIC_MODULES).forEach(mod => {
+                if (window[mod.globalName]) {
+                    delete window[mod.globalName];
+                }
+            });
+
             activeSubModule = null;
+            activeTopic = 'electrostatics';
+            container = null;
+            portalContainer = null;
+            subModuleContainer = null;
         }
     };
 

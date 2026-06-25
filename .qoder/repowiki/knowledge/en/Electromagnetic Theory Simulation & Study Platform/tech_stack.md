@@ -1,0 +1,3 @@
+- **Rendering**: Three.js (r128) with OrbitControls for 3D visualization; HTML5 Canvas 2D API for 2D vector field plots in notes.
+- **Math Typesetting**: KaTeX (v0.16.8) for rendering LaTeX formulas in study notes and tutorials.
+- **Storage**: Native IndexedDB via `system/db.js` for persistent, offline-first state management.

@@ -1,0 +1,34 @@
+# 知识卡导出索引文件
+schema_version: 1
+locale: en-US
+branch: main
+exported_at: "2026-06-25T15:52:35Z"
+modules:
+    "":
+        dir_name: Electromagnetic Theory Simulation & Study Platform
+        title: Electromagnetic Theory Simulation & Study Platform
+        scope:
+            - index.html
+            - AGENTS.md
+            - system/
+            - semester 2\Electromagnetic Theory\coordinate_toolkit.js
+            - semester 2\Electromagnetic Theory\em_sandbox_portal.js
+            - semester 2\Electromagnetic Theory\em_simulator.js
+            - semester 2\Electromagnetic Theory\faradays_law.js
+            - semester 2\Electromagnetic Theory\magnetostatics.js
+            - semester 2\Electromagnetic Theory\notes\NMJ21803 - Chapter 4.json
+            - semester 2\Electromagnetic Theory\notes\NMJ21803 - Chapter 4.pdf
+            - semester 2\Electromagnetic Theory\notes\chapter3_notes.js
+            - semester 2\Electromagnetic Theory\notes\chapter4_notes.js
+            - semester 2\Electromagnetic Theory\notes\ilovepdf_merged (1).json
+            - semester 2\Electromagnetic Theory\notes\ilovepdf_merged (1).pdf
+            - semester 2\Electromagnetic Theory\question paper\NMJ21803 - Tutorial C3.json
+            - semester 2\Electromagnetic Theory\question paper\NMJ21803 - Tutorial C3.pdf
+            - semester 2\Electromagnetic Theory\question paper\tutorial_c3.js
+            - system\app.js
+            - system\block_diagram_builder.js
+            - system\db.js
+        source_files: []
+        children: []
+        depends_on: []
+        related_to: []

@@ -1,0 +1,3 @@
+- Modules expose a global `activeSimulator` object implementing a standard lifecycle interface: `init(container, state)`, `getState()`, and `destroy()`.
+- Dynamic script loading uses cache-busting timestamps (e.g., `src + '?t=' + Date.now()`) to ensure fresh execution of updated simulator modules.
+- State persistence relies on serializing simulator-specific state objects into IndexedDB records, keyed by a generated ID and timestamp.
