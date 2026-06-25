@@ -462,6 +462,18 @@ class AppController {
 
         // Trigger window resize so that Canvas elements update their layout/sizes
         window.dispatchEvent(new Event('resize'));
+
+        // Propagate resize event to all child iframes immediately and after a short delay
+        const resizeIframes = () => {
+            document.querySelectorAll('iframe').forEach(iframe => {
+                if (iframe.contentWindow) {
+                    iframe.contentWindow.dispatchEvent(new Event('resize'));
+                }
+            });
+        };
+        resizeIframes();
+        setTimeout(resizeIframes, 100);
+        setTimeout(resizeIframes, 300);
     }
 
     renderSidebarContent() {
@@ -982,7 +994,7 @@ class AppController {
         if (vis.type === 'html' && vis.html) {
             const iframe = document.createElement('iframe');
             iframe.style.width = '100%';
-            iframe.style.height = '480px';
+            iframe.style.height = '500px';
             iframe.style.border = 'none';
             iframe.style.background = '#0d1326';
             iframe.srcdoc = vis.html;

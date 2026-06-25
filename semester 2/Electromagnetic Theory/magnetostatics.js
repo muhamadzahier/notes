@@ -283,6 +283,9 @@
                             <button class="btn-minimal text-xs bg-white" id="btn-spawn-toroid">+ Toroid</button>
                             <button class="btn-minimal text-xs bg-white" id="btn-spawn-solenoid">+ Solenoid</button>
                         </div>
+                        <button id="btn-toggle-sidebar" class="btn-toggle-sidebar">
+                            <span>Properties</span> <span id="toggle-sidebar-arrow">➔</span>
+                        </button>
                         <div class="canvas-label-coord" id="coord-label">P: (0.0, 0.0, 2.0)</div>
                         <div id="three-canvas-target" style="width: 100%; height: 100%;"></div>
                     </div>
@@ -685,7 +688,7 @@
             });
 
             const checkMobileView = () => {
-                if (window.innerWidth < 992) {
+                if (window.innerWidth < 768) {
                     resetTabs();
                     tab3d.classList.add('active');
                     canvasParent.classList.remove('hidden');
@@ -698,6 +701,30 @@
             this.mobileViewListener = checkMobileView;
             window.addEventListener('resize', this.mobileViewListener);
             checkMobileView();
+
+            // Sidebar collapse toggler
+            const emSidebar = container.querySelector('#em-sidebar');
+            const btnToggle = container.querySelector('#btn-toggle-sidebar');
+            const arrow = container.querySelector('#toggle-sidebar-arrow');
+
+            const updateSidebarCollapseState = () => {
+                if (window.sidebarCollapsed) {
+                    emSidebar.classList.add('collapsed');
+                    if (arrow) arrow.textContent = '◀';
+                } else {
+                    emSidebar.classList.remove('collapsed');
+                    if (arrow) arrow.textContent = '➔';
+                }
+                this.onResize();
+            };
+
+            if (btnToggle) {
+                btnToggle.addEventListener('click', () => {
+                    window.sidebarCollapsed = !window.sidebarCollapsed;
+                    updateSidebarCollapseState();
+                });
+            }
+            updateSidebarCollapseState();
         },
 
         updatePhysics() {
